@@ -13,7 +13,7 @@
 ## CÔNG NGHỆ SỬ DỤNG
 
 -    **Backend:** [Java](https://www.java.com/en/), [Spring Boot](https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/)
--    **Frontend:** 
+-    **Frontend:** [Nextjs](https://nextjs.org/)
 -    **Database:** [MySQL](https://www.mysql.com/)
 
 ## THÀNH VIÊN NHÓM
