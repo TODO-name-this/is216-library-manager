@@ -1,1 +1,9 @@
-Bỏ file này vào để github nhận ra có folder frontend thôi :3
+# Frontend for Library Manager
+
+Next.TS (lmao) project initialized with Node 22, recommended to install Node with Volta.
+
+Project config:
+- Tailwind
+- TypeScript
+- Turbopack
+- App Router
