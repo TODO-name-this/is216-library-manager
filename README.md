@@ -32,7 +32,8 @@
 - Trước khi bắt đầu cần cài đặt MySQL và cấu hình MySQL trên máy tính của bạn. Phiên bản sử dụng là [MySQL Community](https://dev.mysql.com/downloads/installer/)
 
 > [!NOTE]
-> Khi cấu hình port của MySQL nếu có thay đổi cần nhớ port này vì nó sẽ được sử dụng trong file cấu hình của Spring Boot (mặc định là port 3306)
+> - Khi cấu hình port của MySQL nếu có thay đổi cần nhớ port này vì nó sẽ được sử dụng trong file cấu hình của Spring Boot (mặc định là port 3306)
+> 
 > ![MySQL Port](assets/images/port_config.png)
 
 - Sau khi cài đặt, mở SQL Workbench, login vào MySQL với tài khoản root và mật khẩu đã cấu hình trong quá trình cài đặt.
@@ -67,8 +68,8 @@ spring.datasource.password=demo@123
 ```
 
 > [!CAUTION]
-> Hãy chắc chắn rằng bạn đã tạo database trong MySQL trước khi chạy project. Nếu không, bạn sẽ gặp lỗi khi chạy project.
-> Cẩn thận khi commit file `application.properties` lên git vì nó chứa thông tin nhạy cảm như username và password của MySQL. Bạn có thể sử dụng file `.gitignore` để bỏ qua file này.
+> - Hãy chắc chắn rằng bạn đã tạo database trong MySQL trước khi chạy project. Nếu không, bạn sẽ gặp lỗi khi chạy project.
+> - Cẩn thận khi commit file `application.properties` lên git vì nó chứa thông tin nhạy cảm như username và password của MySQL. Bạn có thể sử dụng file `.gitignore` để bỏ qua file này.
 
 ## 3. Chạy project
 
@@ -82,7 +83,7 @@ cd backend
 ```
 
 > [!NOTE]
-> Hãy để ý logging trong terminal, nếu có lỗi xảy ra trong quá trình chạy project, bạn sẽ thấy thông báo lỗi trong terminal. Nếu không có lỗi xảy ra, bạn sẽ thấy thông báo `Started BackendApplication in ... seconds` và các thông tin khác liên quan đến việc khởi động project.
+> - Hãy để ý logging trong terminal, nếu có lỗi xảy ra trong quá trình chạy project, bạn sẽ thấy thông báo lỗi trong terminal. Nếu không có lỗi xảy ra, bạn sẽ thấy thông báo `Started BackendApplication in ... seconds` và các thông tin khác liên quan đến việc khởi động project.
 
 ## 4. Kiểm tra API
 
