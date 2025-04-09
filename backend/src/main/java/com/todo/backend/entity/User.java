@@ -1,5 +1,6 @@
 package com.todo.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -24,6 +25,7 @@ public class User {
     @Column(name = "EMAIL")
     private String email;
 
+    @JsonIgnore
     @Column(name = "PASSWORD")
     private String password;
 

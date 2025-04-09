@@ -1,0 +1,22 @@
+version: '3'
+
+services:
+  mysql:
+    image: 'mysql:8.0'
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: nextjslibrarydatabase
+      MYSQL_USER: library
+      MYSQL_PASSWORD: library
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    ports:
+      - '3306:3306'
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+      - ./sql/InitSampleData.sql:/docker-entrypoint-initdb.d/InitSampleData.sql
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --init-connect='SET NAMES utf8mb4'
