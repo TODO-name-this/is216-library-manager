@@ -1,6 +1,5 @@
 package com.todo.backend.dao;
 
-import com.todo.backend.entity.Author;
 import com.todo.backend.entity.Book;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

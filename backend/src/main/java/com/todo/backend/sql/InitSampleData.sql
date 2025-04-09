@@ -1,3 +1,5 @@
+SET NAMES utf8mb4;
+
 CREATE DATABASE IF NOT EXISTS `nextjslibrarydatabase` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE `nextjslibrarydatabase`;
 
@@ -95,9 +97,10 @@ CREATE TABLE `REVIEW` (
   `ID` varchar(36) NOT NULL,
   `USER_ID` varchar(36) NOT NULL,
   `BOOK_ID` varchar(36) NOT NULL,
-  `RATING` int(11) NOT NULL,
+  `SCORE` int(11) NOT NULL,
   `COMMENT` text DEFAULT NULL,
-  `REVIEW_DATE` varchar(50) DEFAULT NULL,
+  `DATE` varchar(50) DEFAULT NULL,
+  `TITLE` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`ID`),
   UNIQUE KEY `UK_USER_BOOK` (`USER_ID`, `BOOK_ID`),
   KEY `FK_REVIEW_BOOK` (`BOOK_ID`),
@@ -107,6 +110,7 @@ CREATE TABLE `REVIEW` (
 
 CREATE TABLE `TRANSACTION` (
   `ID` varchar(36) NOT NULL,
+  `AMOUNT` bigint NOT NULL DEFAULT 0,
   `USER_ID` varchar(36) NOT NULL,
   `BOOK_ID` varchar(36) NOT NULL,
   `BORROW_DATE` varchar(50) NOT NULL,
@@ -158,9 +162,9 @@ INSERT INTO `AUTHOR` (`ID`, `NAME`, `BIOGRAPHY`) VALUES
 ('a3', 'Bộ Giáo dục và Đào tạo', 'Cơ quan quản lý nhà nước về giáo dục tại Việt Nam'),
 ('a4', 'Robert C. Martin', 'Software engineer and author, known for promoting agile software development and software craftsmanship'),
 ('a5', 'Kyle Simpson', 'JavaScript developer, author of the "You Don\'t Know JS" book series'),
-('a6', 'Erich Gamma', 'Software engineer, one of the "Gang of Four" authors'),
-('a7', 'Richard Helm', 'Software engineer, one of the "Gang of Four" authors'),
-('a8', 'Ralph Johnson', 'Software engineer, one of the "Gang of Four" authors'),
+('a6', 'Erich Gamma', 'Software engineer, one of the Gang of Four authors'),
+('a7', 'Richard Helm', 'Software engineer, one of the Gang of Four authors'),
+('a8', 'Ralph Johnson', 'Software engineer, one of the Gang of Four authors'),
 ('a9', 'John Vlissides', 'Software engineer, one of the "Gang of Four" authors'),
 ('a10', 'Douglas Crockford', 'Creator of JSON and JavaScript expert'),
 ('a11', 'Steve Krug', 'Usability expert and author'),
@@ -320,35 +324,35 @@ INSERT INTO `INVENTORY` (`BOOK_ID`, `AMOUNT`) VALUES
 ('b25', 7);
 
 -- 9. Insert Reviews
-INSERT INTO `REVIEW` (`ID`, `USER_ID`, `BOOK_ID`, `RATING`, `COMMENT`, `REVIEW_DATE`) VALUES
-('r1', 'u2', 'b6', 5, 'A must-read for software developers. Changed how I think about code.', '2023-01-15'),
-('r2', 'u3', 'b6', 4, 'Great principles but some examples are outdated.', '2023-02-10'),
-('r3', 'u4', 'b7', 5, 'Finally understood closures after reading this.', '2023-01-20'),
-('r4', 'u5', 'b8', 5, 'Classic book on design patterns. Still relevant today.', '2023-03-05'),
-('r5', 'u6', 'b9', 4, 'Great insights on JavaScript good practices.', '2023-02-15'),
-('r6', 'u7', 'b10', 5, 'Changed how I think about UX design. Simple and effective.', '2023-01-10'),
-('r7', 'u2', 'b13', 4, 'Excellent introduction to JavaScript programming.', '2023-03-15'),
-('r8', 'u3', 'b15', 5, 'Best React book I\'ve read. Great examples.', '2023-02-20'),
-('r9', 'u4', 'b16', 4, 'Makes algorithms accessible and fun to learn.', '2023-01-25'),
-('r10', 'u5', 'b17', 5, 'Comprehensive guide to modern data systems.', '2023-03-10');
+INSERT INTO `REVIEW` (`ID`, `USER_ID`, `BOOK_ID`, `SCORE`, `COMMENT`, `DATE`, `TITLE`) VALUES
+('r1', 'u2', 'b6', 5, 'A must-read for software developers. Changed how I think about code.', '2023-01-15', 'Excellent Book'),
+('r2', 'u3', 'b6', 4, 'Great principles but some examples are outdated.', '2023-02-10', 'Good Read'),
+('r3', 'u4', 'b7', 5, 'Finally understood closures after reading this.', '2023-01-20', 'Very Helpful'),
+('r4', 'u5', 'b8', 5, 'Classic book on design patterns. Still relevant today.', '2023-03-05', 'Classic Reference'),
+('r5', 'u6', 'b9', 4, 'Great insights on JavaScript good practices.', '2023-02-15', 'Useful Guide'),
+('r6', 'u7', 'b10', 5, 'Changed how I think about UX design. Simple and effective.', '2023-01-10', 'UX Bible'),
+('r7', 'u2', 'b13', 4, 'Excellent introduction to JavaScript programming.', '2023-03-15', 'Great for Beginners'),
+('r8', 'u3', 'b15', 5, 'Best React book I\'ve read. Great examples.', '2023-02-20', 'React Master Class'),
+('r9', 'u4', 'b16', 4, 'Makes algorithms accessible and fun to learn.', '2023-01-25', 'Fun Learning'),
+('r10', 'u5', 'b17', 5, 'Comprehensive guide to modern data systems.', '2023-03-10', 'Data Systems Deep Dive');
 
 -- 10. Insert Transactions
-INSERT INTO `TRANSACTION` (`ID`, `USER_ID`, `BOOK_ID`, `BORROW_DATE`, `DUE_DATE`, `RETURN_DATE`) VALUES
-('t1', 'u2', 'b6', '2023-01-01', '2023-01-15', '2023-01-14'),
-('t2', 'u3', 'b7', '2023-01-05', '2023-01-19', '2023-01-18'),
-('t3', 'u4', 'b8', '2023-01-10', '2023-01-24', '2023-01-20'),
-('t4', 'u5', 'b9', '2023-01-15', '2023-01-29', '2023-01-28'),
-('t5', 'u6', 'b10', '2023-01-20', '2023-02-03', '2023-02-01'),
-('t6', 'u7', 'b11', '2023-01-25', '2023-02-08', NULL),
-('t7', 'u2', 'b12', '2023-02-01', '2023-02-15', '2023-02-14'),
-('t8', 'u3', 'b13', '2023-02-05', '2023-02-19', '2023-02-17'),
-('t9', 'u4', 'b14', '2023-02-10', '2023-02-24', NULL),
-('t10', 'u5', 'b15', '2023-02-15', '2023-03-01', '2023-02-28'),
-('t11', 'u6', 'b16', '2023-02-20', '2023-03-06', '2023-03-05'),
-('t12', 'u7', 'b17', '2023-02-25', '2023-03-11', NULL),
-('t13', 'u2', 'b18', '2023-03-01', '2023-03-15', '2023-03-14'),
-('t14', 'u3', 'b19', '2023-03-05', '2023-03-19', '2023-03-18'),
-('t15', 'u4', 'b20', '2023-03-10', '2023-03-24', NULL);
+INSERT INTO `TRANSACTION` (`ID`, `AMOUNT`, `USER_ID`, `BOOK_ID`, `BORROW_DATE`, `DUE_DATE`, `RETURN_DATE`) VALUES
+('t1', 110000, 'u2', 'b6', '2023-01-01', '2023-01-15', '2023-01-14'),
+('t2', 130000, 'u3', 'b7', '2023-01-05', '2023-01-19', '2023-01-18'),
+('t3', 150000,'u4', 'b8', '2023-01-10', '2023-01-24', '2023-01-20'),
+('t4', 170000, 'u5', 'b9', '2023-01-15', '2023-01-29', '2023-01-28'),
+('t5', 190000, 'u6', 'b10', '2023-01-20', '2023-02-03', '2023-02-01'),
+('t6', 210000, 'u7', 'b11', '2023-01-25', '2023-02-08', NULL),
+('t7', 230000, 'u2', 'b12', '2023-02-01', '2023-02-15', '2023-02-14'),
+('t8', 250000, 'u3', 'b13', '2023-02-05', '2023-02-19', '2023-02-17'),
+('t9', 270000, 'u4', 'b14', '2023-02-10', '2023-02-24', NULL),
+('t10', 300000, 'u5', 'b15', '2023-02-15', '2023-03-01', '2023-02-28'),
+('t11', 330000, 'u6', 'b16', '2023-02-20', '2023-03-06', '2023-03-05'),
+('t12', 370000, 'u7', 'b17', '2023-02-25', '2023-03-11', NULL),
+('t13', 400000, 'u2', 'b18', '2023-03-01', '2023-03-15', '2023-03-14'),
+('t14', 410000, 'u3', 'b19', '2023-03-05', '2023-03-19', '2023-03-18'),
+('t15', 430000, 'u4', 'b20', '2023-03-10', '2023-03-24', NULL);
 
 -- 11. Insert Reservations
 INSERT INTO `RESERVATION` (`ID`, `USER_ID`, `BOOK_ID`, `RESERVATION_DATE`, `EXPIRATION_DATE`, `STATUS`) VALUES

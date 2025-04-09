@@ -1,5 +1,6 @@
 package com.todo.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -22,6 +23,7 @@ public class Category {
     private String description;
 
     // Relationship with BookCategory
+    @JsonIgnore
      @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
      private List<BookCategory> bookCategories;
 }

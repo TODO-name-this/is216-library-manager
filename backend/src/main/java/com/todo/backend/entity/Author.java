@@ -1,5 +1,6 @@
 package com.todo.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -28,6 +29,7 @@ public class Author {
     private String biography;
 
     // Relationship with BookAuthor
+    @JsonIgnore
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<BookAuthor> bookAuthors;
 }
