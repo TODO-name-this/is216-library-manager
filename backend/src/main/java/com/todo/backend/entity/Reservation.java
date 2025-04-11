@@ -22,6 +22,9 @@ public class Reservation {
     @Column(name = "STATUS")
     private String status;
 
+    @Column(name = "QUANTITY")
+    private int quantity;
+
     @Column(name = "BOOK_ID")
     private String bookId;
 

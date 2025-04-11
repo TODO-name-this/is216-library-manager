@@ -13,8 +13,8 @@ public class Inventory {
     @NotNull
     private String bookId;
 
-    @Column(name = "AMOUNT")
-    private int amount;
+    @Column(name = "QUANTITY")
+    private int quantity;
 
     // Relationship with Book
     @OneToOne

@@ -16,14 +16,11 @@ public class Review {
     @Column(name = "DATE")
     private String date;
 
-    @Column(name = "TITLE")
-    private String title;
-
     @Column(name = "COMMENT")
     private String comment;
 
-    @Column(name = "SCORE")
-    private int score;
+    @Column(name = "STAR")
+    private int star;
 
     @Column(name = "BOOK_ID")
     private String bookId;

@@ -25,6 +25,12 @@ public class Book {
     @Column(name = "ISBN")
     private String isbn;
 
+    @Column(name = "RATING_COUNT")
+    private int ratingCount;
+
+    @Column(name = "RATING")
+    private double rating;
+
     @Column(name = "PUBLISHED_DATE")
     private String publishedDate;
 
