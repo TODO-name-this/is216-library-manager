@@ -22,8 +22,8 @@ public class Transaction {
     @Column(name = "RETURN_DATE")
     private String returnDate;
 
-    @Column(name = "AMOUNT")
-    private int amount;
+    @Column(name = "QUANTITY")
+    private int quantity;
 
     @Column(name = "BOOK_ID")
     private String bookId;
