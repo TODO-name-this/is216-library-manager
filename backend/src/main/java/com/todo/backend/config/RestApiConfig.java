@@ -1,5 +1,6 @@
 package com.todo.backend.config;
 
+import com.todo.backend.entity.Author;
 import com.todo.backend.entity.Book;
 import com.todo.backend.entity.Review;
 import org.springframework.context.annotation.Configuration;
@@ -20,10 +21,7 @@ public class RestApiConfig implements RepositoryRestConfigurer {
                 HttpMethod.DELETE,
                 HttpMethod.PATCH};
 
-        config.exposeIdsFor(Book.class);
-        config.exposeIdsFor(Review.class);
-
-
+        config.exposeIdsFor(Book.class, Review.class, Author.class);
         disableHttpMethods(config, theUnsupportedActions);
 
         /* Configure CORS Mapping */
