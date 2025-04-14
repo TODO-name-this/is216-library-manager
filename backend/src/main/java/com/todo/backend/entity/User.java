@@ -16,11 +16,17 @@ public class User {
     @NotNull
     private String id;
 
+    @Column(name = "CCCD")
+    private String cccd;
+
     @Column(name = "AVATAR_URL")
     private String avatarUrl;
 
     @Column(name = "NAME")
     private String name;
+
+    @Column(name = "DOB")
+    private String dob;
 
     @Column(name = "EMAIL")
     private String email;

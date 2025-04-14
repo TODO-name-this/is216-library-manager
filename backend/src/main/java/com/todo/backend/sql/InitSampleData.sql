@@ -48,6 +48,8 @@ CREATE TABLE `PUBLISHER` (
 
 CREATE TABLE `USER` (
   `ID` varchar(36) NOT NULL,
+  `CCCD` char(15) NOT NULL,
+  `DOB` varchar(50) NOT NULL,
   `AVATAR_URL` text DEFAULT NULL,
   `NAME` varchar(255) NOT NULL,
   `EMAIL` varchar(255) NOT NULL,
@@ -301,14 +303,14 @@ INSERT INTO `BOOK_CATEGORY` (`BOOK_ID`, `CATEGORY_ID`) VALUES
 ('b25', 'c4');
 
 -- 7. Insert Users
-INSERT INTO `USER` (`ID`, `NAME`, `EMAIL`, `PASSWORD`, `ROLE`) VALUES
-('u1', 'Admin', 'admin@library.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'ADMIN'),
-('u2', 'John Doe', 'john@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
-('u3', 'Jane Smith', 'jane@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
-('u4', 'Bob Johnson', 'bob@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
-('u5', 'Alice Williams', 'alice@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
-('u6', 'Michael Brown', 'michael@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
-('u7', 'Emily Davis', 'emily@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER');
+INSERT INTO `USER` (`ID`, `NAME`, `CCCD`, `DOB`, `EMAIL`, `PASSWORD`, `ROLE`) VALUES
+('u1', 'Admin', '012345678901', '2005-12-22', 'admin@library.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'ADMIN'),
+('u2', 'John Doe', '012345678902', '2001-02-12', 'john@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
+('u3', 'Jane Smith', '012345678903', '2000-01-01', 'jane@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
+('u4', 'Bob Johnson', '012345678904', '1998-05-11', 'bob@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
+('u5', 'Alice Williams', '012345678905', '2003-09-14', 'alice@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
+('u6', 'Michael Brown', '012345678906', '2005-09-14', 'michael@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
+('u7', 'Emily Davis', '012345678907', '2008-11-25', 'emily@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER');
 
 -- 8. Insert Inventory
 INSERT INTO `INVENTORY` (`BOOK_ID`, `QUANTITY`, `BORROWED`, `DAMAGED`) VALUES
