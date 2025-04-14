@@ -19,6 +19,6 @@ public class Inventory {
     // Relationship with Book
     @OneToOne
     @MapsId
-    @JoinColumn(name = "BOOK_ID", referencedColumnName = "ID")
+    @JoinColumn(name = "BOOK_ID", referencedColumnName = "ID", insertable = false, updatable = false)
     private Book book;
 }

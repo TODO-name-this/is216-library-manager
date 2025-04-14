@@ -31,12 +31,17 @@ public class Transaction {
     @Column(name = "USER_ID")
     private String userId;
 
-    // Relationships with Book and User
+    // Relationships with Book
     @ManyToOne
     @JoinColumn(name = "BOOK_ID", referencedColumnName = "ID", insertable = false, updatable = false)
     private Book book;
 
+    // Relationships with User
     @ManyToOne
     @JoinColumn(name = "USER_ID", referencedColumnName = "ID", insertable = false, updatable = false)
     private User user;
+
+    // Relationships with ReturnDetails
+    @OneToOne(mappedBy = "transaction", cascade = CascadeType.ALL)
+    private ReturnDetail returnDetail;
 }

@@ -64,6 +64,6 @@ public class Book {
     private List<BookCategory> bookCategories;
 
     // Relationship with Inventory
-    @OneToOne(mappedBy = "book", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "book", cascade = CascadeType.ALL)
     private Inventory inventory;
 }
