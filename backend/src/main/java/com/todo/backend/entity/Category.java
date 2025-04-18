@@ -24,6 +24,6 @@ public class Category {
 
     // Relationship with BookCategory
     @JsonIgnore
-     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-     private List<BookCategory> bookCategories;
+    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
+    private List<BookCategory> bookCategories;
 }

@@ -1,5 +1,6 @@
 package com.todo.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -30,7 +31,8 @@ public class Publisher {
     @Column(name = "PHONE")
     private String phone;
 
-    // Relationship with Book
-    @OneToMany(mappedBy = "publisher", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Book> books;
+    // Relationship with BookTitle
+    @JsonIgnore
+    @OneToMany(mappedBy = "publisher", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<BookTitle> bookTitles;
 }

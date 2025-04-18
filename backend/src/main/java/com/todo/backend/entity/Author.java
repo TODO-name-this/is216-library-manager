@@ -30,6 +30,6 @@ public class Author {
 
     // Relationship with BookAuthor
     @JsonIgnore
-    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "author", fetch = FetchType.LAZY)
     private List<BookAuthor> bookAuthors;
 }

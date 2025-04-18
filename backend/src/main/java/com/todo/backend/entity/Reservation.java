@@ -1,5 +1,6 @@
 package com.todo.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -25,18 +26,21 @@ public class Reservation {
     @Column(name = "QUANTITY")
     private int quantity;
 
-    @Column(name = "BOOK_ID")
-    private String bookId;
+    @Column(name = "BOOK_TITLE_ID")
+    private String bookTitleId;
 
     @Column(name = "USER_ID")
     private String userId;
 
-    // Relationships with Book and User
-    @ManyToOne
-    @JoinColumn(name = "BOOK_ID", referencedColumnName = "ID", insertable = false, updatable = false)
-    private Book book;
+    // Relationship with BookTitle
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "BOOK_TITLE_ID", referencedColumnName = "ID", insertable = false, updatable = false)
+    private BookTitle bookTitle;
 
-    @ManyToOne
+    // Relationship with User
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "USER_ID", referencedColumnName = "ID", insertable = false, updatable = false)
     private User user;
 }
