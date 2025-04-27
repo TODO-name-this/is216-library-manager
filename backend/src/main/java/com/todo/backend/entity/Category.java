@@ -2,7 +2,7 @@ package com.todo.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.util.List;
@@ -13,10 +13,11 @@ import java.util.List;
 public class Category {
     @Id
     @Column(name = "ID")
-    @NotNull
+    @NotBlank(message = "Category ID is required")
     private String id;
 
     @Column(name = "NAME")
+    @NotBlank(message = "Category name is required")
     private String name;
 
     @Column(name = "DESCRIPTION")
@@ -24,6 +25,6 @@ public class Category {
 
     // Relationship with BookCategory
     @JsonIgnore
-    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BookCategory> bookCategories;
 }

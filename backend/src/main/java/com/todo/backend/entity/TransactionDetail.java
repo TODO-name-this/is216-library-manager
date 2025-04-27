@@ -1,6 +1,7 @@
 package com.todo.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.todo.backend.entity.compositekey.TransactionDetailPrimaryKey;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -8,7 +9,7 @@ import lombok.Data;
 @Entity
 @Table(name = "TRANSACTION_DETAIL")
 @Data
-@IdClass(TransactionDetail.class)
+@IdClass(TransactionDetailPrimaryKey.class)
 public class TransactionDetail {
     @Id
     @NotNull
@@ -20,8 +21,8 @@ public class TransactionDetail {
     @Column(name = "BOOK_COPY_ID")
     private String bookCopyId;
 
-    @Column(name = "RETURN_DATE")
-    private String returnDate;
+    @Column(name = "RETURNED_DATE")
+    private String returnedDate;
 
     @Column(name = "PENALTY_FEE")
     private int penaltyFee;

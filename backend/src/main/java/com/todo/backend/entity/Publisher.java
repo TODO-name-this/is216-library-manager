@@ -2,7 +2,7 @@ package com.todo.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.util.List;
@@ -13,16 +13,18 @@ import java.util.List;
 public class Publisher {
     @Id
     @Column(name = "ID")
-    @NotNull
+    @NotBlank(message = "Publisher ID is required")
     private String id;
 
     @Column(name = "LOGO_URL")
     private String logoUrl;
 
     @Column(name = "NAME")
+    @NotBlank(message = "Publisher name is required")
     private String name;
 
     @Column(name = "ADDRESS")
+    @NotBlank(message = "Publisher address is required")
     private String address;
 
     @Column(name = "EMAIL")
