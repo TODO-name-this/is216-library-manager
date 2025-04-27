@@ -1,11 +1,11 @@
 package com.todo.backend.controller;
 
+import com.todo.backend.entity.Transaction;
 import com.todo.backend.service.TransactionService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin("http://localhost:3000")
 @RestController
@@ -17,8 +17,41 @@ public class TransactionController {
         this.transactionService = transactionService;
     }
 
-    @PostMapping("/add")
-    public ResponseEntity<?> createTransaction() {
-        return ResponseEntity.badRequest().body("Not implemented yet");
+    @PostMapping
+    public ResponseEntity<?> createTransaction(@Valid @RequestBody Transaction transaction, BindingResult result) {
+        try {
+            if (result.hasErrors()) {
+                return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
+            }
+
+            Transaction createdTransaction = transactionService.createTransaction(transaction);
+            return ResponseEntity.ok(createdTransaction);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error creating transaction: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateTransaction(@PathVariable String id, @Valid @RequestBody Transaction transaction, BindingResult result) {
+        try {
+            if (result.hasErrors()) {
+                return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
+            }
+
+            Transaction updatedTransaction = transactionService.updateTransaction(transaction);
+            return ResponseEntity.ok(updatedTransaction);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error updating transaction: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteTransaction(@PathVariable String id) {
+        try {
+            transactionService.deleteTransaction(id);
+            return ResponseEntity.ok("Transaction deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error deleting transaction: " + e.getMessage());
+        }
     }
 }

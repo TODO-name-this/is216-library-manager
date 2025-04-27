@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 @Service
 @Transactional
 public class TransactionService {
-    private TransactionRepository transactionRepository;
+    private final TransactionRepository transactionRepository;
 
     public TransactionService(TransactionRepository transactionRepository) {
         this.transactionRepository = transactionRepository;
@@ -22,7 +22,11 @@ public class TransactionService {
         return transactionRepository.save(transaction);
     }
 
-    public void deleteTransaction(Transaction transaction) {
-        transactionRepository.delete(transaction);
+    public void deleteTransaction(String id) {
+        Transaction existingTransaction = transactionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+
+
+        transactionRepository.delete(existingTransaction);
     }
 }

@@ -31,6 +31,9 @@ public class ReservationService {
     }
 
     public void deleteReservation(String id) {
-        reservationRepository.deleteById(id);
+        Reservation existingReservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Reservation not found"));
+
+        reservationRepository.delete(existingReservation);
     }
 }

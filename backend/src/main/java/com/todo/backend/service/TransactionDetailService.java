@@ -22,7 +22,10 @@ public class TransactionDetailService {
         return transactionDetailRepository.save(transactionDetail);
     }
 
-    public void deleteTransactionDetail(TransactionDetail transactionDetail) {
-        transactionDetailRepository.delete(transactionDetail);
+    public void deleteTransactionDetail(String id) {
+        TransactionDetail existingTransactionDetail = transactionDetailRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Transaction detail not found"));
+
+        transactionDetailRepository.delete(existingTransactionDetail);
     }
 }
