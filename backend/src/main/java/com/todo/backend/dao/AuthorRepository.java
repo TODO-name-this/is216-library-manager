@@ -11,9 +11,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.List;
 
 public interface AuthorRepository extends JpaRepository<Author, String> {
-
     Page<Author> findByNameContainingIgnoreCase(@RequestParam("name") String name, Pageable pageable);
 
-    @Query("SELECT a FROM Author a JOIN a.bookAuthors ba WHERE ba.book.id = :bookId")
-    List<Author> findByBookId(@Param("bookId") String bookId);
+    @Query("SELECT a FROM Author a JOIN a.bookAuthors ba WHERE ba.bookTitle.id = :bookTitleId")
+    List<Author> findByBookTitleId(@Param("bookTitleId") String bookTitleId);
 }

@@ -1,6 +1,6 @@
 package com.todo.backend.config;
 
-import com.todo.backend.entity.Book;
+import com.todo.backend.entity.BookTitle;
 import com.todo.backend.entity.Review;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
@@ -20,7 +20,7 @@ public class RestApiConfig implements RepositoryRestConfigurer {
                 HttpMethod.DELETE,
                 HttpMethod.PATCH};
 
-        config.exposeIdsFor(Book.class);
+        config.exposeIdsFor(BookTitle.class);
         config.exposeIdsFor(Review.class);
 
 

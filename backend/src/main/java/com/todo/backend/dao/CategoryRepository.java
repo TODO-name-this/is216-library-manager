@@ -8,6 +8,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.List;
 
 public interface CategoryRepository extends JpaRepository<Category, String> {
-    @Query("SELECT a FROM Category a JOIN a.bookCategories ba WHERE ba.book.id = :bookId")
-    List<Category> findByBookId(@RequestParam("bookId") String bookId);
+    @Query("SELECT a FROM Category a JOIN a.bookCategories ba WHERE ba.bookTitle.id = :bookTitleId")
+    List<Category> findByBookTitleId(@RequestParam("bookTitleId") String bookTitleId);
 }
