@@ -9,11 +9,11 @@ import java.util.Objects;
 @NoArgsConstructor
 @Getter
 public class BookCategoryPrimaryKey implements Serializable {
-    private String bookId;
+    private String bookTitleId;
     private String categoryId;
 
-    private BookCategoryPrimaryKey(String bookId, String categoryId) {
-        this.bookId = bookId;
+    private BookCategoryPrimaryKey(String bookTitleId, String categoryId) {
+        this.bookTitleId = bookTitleId;
         this.categoryId = categoryId;
     }
 
@@ -22,7 +22,7 @@ public class BookCategoryPrimaryKey implements Serializable {
         if (this == obj) return true;
 
         if (obj instanceof BookCategoryPrimaryKey other) {
-            return (this.bookId != null && this.bookId.equals(other.bookId)) &&
+            return (this.bookTitleId != null && this.bookTitleId.equals(other.bookTitleId)) &&
                    (this.categoryId != null && this.categoryId.equals(other.categoryId));
         }
 
@@ -31,6 +31,6 @@ public class BookCategoryPrimaryKey implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(bookId, categoryId);
+        return Objects.hash(bookTitleId, categoryId);
     }
 }

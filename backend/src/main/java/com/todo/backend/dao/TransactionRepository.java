@@ -1,13 +1,17 @@
 package com.todo.backend.dao;
 
 import com.todo.backend.entity.Transaction;
+import com.todo.backend.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.web.bind.annotation.RequestParam;
 
-public interface TransactionRepository extends JpaRepository<Transaction, String> {
-    Page<Transaction> findByUserId(@RequestParam("user_id") String userId, Pageable pageable);
+import java.util.List;
 
-    Page<Transaction> findByBookId(@RequestParam("book_id") String bookId, Pageable pageable);
+public interface TransactionRepository extends JpaRepository<Transaction, String> {
+//    Page<Transaction> findByUserId(@RequestParam("user_id") String userId, Pageable pageable);
+//
+//    Page<Transaction> findByBookId(@RequestParam("book_id") String bookId, Pageable pageable);
 }

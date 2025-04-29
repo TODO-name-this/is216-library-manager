@@ -2,7 +2,7 @@ package com.todo.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.util.List;
@@ -13,13 +13,14 @@ import java.util.List;
 public class Author {
     @Id
     @Column(name = "ID")
-    @NotNull
+    @NotBlank(message = "Author ID is required")
     private String id;
 
     @Column(name = "AVATAR_URL")
     private String avatarUrl;
 
     @Column(name = "NAME")
+    @NotBlank(message = "Author name is required")
     private String name;
 
     @Column(name = "BIRTHDAY")
@@ -30,6 +31,6 @@ public class Author {
 
     // Relationship with BookAuthor
     @JsonIgnore
-    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "author", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BookAuthor> bookAuthors;
 }

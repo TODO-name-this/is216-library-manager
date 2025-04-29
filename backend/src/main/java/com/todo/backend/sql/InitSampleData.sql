@@ -7,11 +7,12 @@ USE `nextjslibrarydatabase`;
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS `RESERVATION`;
 DROP TABLE IF EXISTS `TRANSACTION`;
+DROP TABLE IF EXISTS `TRANSACTION_DETAIL`;
 DROP TABLE IF EXISTS `REVIEW`;
-DROP TABLE IF EXISTS `INVENTORY`;
+DROP TABLE IF EXISTS `BOOK_COPY`;
+DROP TABLE IF EXISTS `BOOK_TITLE`;
 DROP TABLE IF EXISTS `BOOK_CATEGORY`;
 DROP TABLE IF EXISTS `BOOK_AUTHOR`;
-DROP TABLE IF EXISTS `BOOK`;
 DROP TABLE IF EXISTS `AUTHOR`;
 DROP TABLE IF EXISTS `CATEGORY`;
 DROP TABLE IF EXISTS `PUBLISHER`;
@@ -39,7 +40,7 @@ CREATE TABLE `PUBLISHER` (
   `ID` varchar(36) NOT NULL,
   `LOGO_URL` text DEFAULT NULL,
   `NAME` varchar(255) NOT NULL,
-  `ADDRESS` text DEFAULT NULL,
+  `ADDRESS` text NOT NULL,
   `EMAIL` varchar(255) DEFAULT NULL,
   `PHONE` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`ID`)
@@ -47,94 +48,108 @@ CREATE TABLE `PUBLISHER` (
 
 CREATE TABLE `USER` (
   `ID` varchar(36) NOT NULL,
+  `CCCD` char(15) NOT NULL,
+  `DOB` varchar(50) NOT NULL,
   `AVATAR_URL` text DEFAULT NULL,
   `NAME` varchar(255) NOT NULL,
   `EMAIL` varchar(255) NOT NULL,
-  `PASSWORD` varchar(255) NOT NULL,
+  `PASSWORD` varchar(255),
   `ROLE` varchar(50) DEFAULT 'USER',
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `EMAIL_UNIQUE` (`EMAIL`)
+  UNIQUE KEY `EMAIL_UNIQUE` (`EMAIL`),
+  UNIQUE KEY `CCCD_UNIQUE` (`CCCD`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `BOOK` (
+CREATE TABLE `BOOK_TITLE` (
   `ID` varchar(36) NOT NULL,
   `IMAGE_URL` text DEFAULT NULL,
   `TITLE` varchar(255) NOT NULL,
   `ISBN` varchar(50) DEFAULT NULL,
   `PUBLISHED_DATE` varchar(50) DEFAULT NULL,
   `PUBLISHER_ID` varchar(36) DEFAULT NULL,
+  UNIQUE KEY `UK_ISBN` (`ISBN`),
   PRIMARY KEY (`ID`),
-  KEY `FK_BOOK_PUBLISHER` (`PUBLISHER_ID`),
-  CONSTRAINT `FK_BOOK_PUBLISHER` FOREIGN KEY (`PUBLISHER_ID`) REFERENCES `PUBLISHER` (`ID`)
+  KEY `FK_BOOK_TITLE_PUBLISHER` (`PUBLISHER_ID`),
+  CONSTRAINT `FK_BOOK_TITLE_PUBLISHER` FOREIGN KEY (`PUBLISHER_ID`) REFERENCES `PUBLISHER` (`ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `BOOK_COPY` (
+  `ID` varchar(36) NOT NULL,
+  `BOOK_TITLE_ID` varchar(36) NOT NULL,
+  `STATUS` varchar(50) NOT NULL DEFAULT 'AVAILABLE',
+  PRIMARY KEY (`ID`),
+  KEY `FK_BOOK_COPY_BOOK_TITLE` (`BOOK_TITLE_ID`),
+  CONSTRAINT `FK_BOOK_COPY_BOOK_TITLE` FOREIGN KEY (`BOOK_TITLE_ID`) REFERENCES `BOOK_TITLE` (`ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 CREATE TABLE `BOOK_AUTHOR` (
-  `BOOK_ID` varchar(36) NOT NULL,
+  `BOOK_TITLE_ID` varchar(36) NOT NULL,
   `AUTHOR_ID` varchar(36) NOT NULL,
-  PRIMARY KEY (`BOOK_ID`, `AUTHOR_ID`),
+  PRIMARY KEY (`BOOK_TITLE_ID`, `AUTHOR_ID`),
   KEY `FK_BA_AUTHOR` (`AUTHOR_ID`),
-  CONSTRAINT `FK_BA_BOOK` FOREIGN KEY (`BOOK_ID`) REFERENCES `BOOK` (`ID`),
+  CONSTRAINT `FK_BA_BOOK_TITLE` FOREIGN KEY (`BOOK_TITLE_ID`) REFERENCES `BOOK_TITLE` (`ID`),
   CONSTRAINT `FK_BA_AUTHOR` FOREIGN KEY (`AUTHOR_ID`) REFERENCES `AUTHOR` (`ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `BOOK_CATEGORY` (
-  `BOOK_ID` varchar(36) NOT NULL,
+  `BOOK_TITLE_ID` varchar(36) NOT NULL,
   `CATEGORY_ID` varchar(36) NOT NULL,
-  PRIMARY KEY (`BOOK_ID`, `CATEGORY_ID`),
+  PRIMARY KEY (`BOOK_TITLE_ID`, `CATEGORY_ID`),
   KEY `FK_BC_CATEGORY` (`CATEGORY_ID`),
-  CONSTRAINT `FK_BC_BOOK` FOREIGN KEY (`BOOK_ID`) REFERENCES `BOOK` (`ID`),
+  CONSTRAINT `FK_BC_BOOK_TITLE` FOREIGN KEY (`BOOK_TITLE_ID`) REFERENCES `BOOK_TITLE` (`ID`),
   CONSTRAINT `FK_BC_CATEGORY` FOREIGN KEY (`CATEGORY_ID`) REFERENCES `CATEGORY` (`ID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE `INVENTORY` (
-  `BOOK_ID` varchar(36) NOT NULL,
-  `AMOUNT` int(11) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`BOOK_ID`),
-  CONSTRAINT `FK_INVENTORY_BOOK` FOREIGN KEY (`BOOK_ID`) REFERENCES `BOOK` (`ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `REVIEW` (
   `ID` varchar(36) NOT NULL,
   `USER_ID` varchar(36) NOT NULL,
-  `BOOK_ID` varchar(36) NOT NULL,
-  `SCORE` int(11) NOT NULL,
+  `BOOK_TITLE_ID` varchar(36) NOT NULL,
+  `STAR` int(11) NOT NULL,
   `COMMENT` text DEFAULT NULL,
-  `DATE` varchar(50) DEFAULT NULL,
-  `TITLE` varchar(255) DEFAULT NULL,
+  `DATE` varchar(50) NOT NULL ,
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `UK_USER_BOOK` (`USER_ID`, `BOOK_ID`),
-  KEY `FK_REVIEW_BOOK` (`BOOK_ID`),
+  UNIQUE KEY `UK_USER_BOOK_TITLE` (`USER_ID`, `BOOK_TITLE_ID`),
+  KEY `FK_REVIEW_BOOK_TITLE` (`BOOK_TITLE_ID`),
   CONSTRAINT `FK_REVIEW_USER` FOREIGN KEY (`USER_ID`) REFERENCES `USER` (`ID`),
-  CONSTRAINT `FK_REVIEW_BOOK` FOREIGN KEY (`BOOK_ID`) REFERENCES `BOOK` (`ID`)
+  CONSTRAINT `FK_REVIEW_BOOK_TITLE` FOREIGN KEY (`BOOK_TITLE_ID`) REFERENCES `BOOK_TITLE` (`ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `TRANSACTION` (
   `ID` varchar(36) NOT NULL,
-  `AMOUNT` bigint NOT NULL DEFAULT 0,
   `USER_ID` varchar(36) NOT NULL,
-  `BOOK_ID` varchar(36) NOT NULL,
   `BORROW_DATE` varchar(50) NOT NULL,
   `DUE_DATE` varchar(50) NOT NULL,
-  `RETURN_DATE` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`ID`),
   KEY `FK_TRANSACTION_USER` (`USER_ID`),
-  KEY `FK_TRANSACTION_BOOK` (`BOOK_ID`),
-  CONSTRAINT `FK_TRANSACTION_USER` FOREIGN KEY (`USER_ID`) REFERENCES `USER` (`ID`),
-  CONSTRAINT `FK_TRANSACTION_BOOK` FOREIGN KEY (`BOOK_ID`) REFERENCES `BOOK` (`ID`)
+  CONSTRAINT `FK_TRANSACTION_USER` FOREIGN KEY (`USER_ID`) REFERENCES `USER` (`ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `TRANSACTION_DETAIL` (
+  `TRANSACTION_ID` varchar(36) NOT NULL,
+  `BOOK_COPY_ID` varchar(36) NOT NULL,
+  `RETURNED_DATE` varchar(50) DEFAULT NULL,
+  `PENALTY_FEE` bigint NOT NULL DEFAULT 0,
+  PRIMARY KEY (`TRANSACTION_ID`, `BOOK_COPY_ID`),
+  KEY `FK_TRANSACTION_DETAIL_BOOK_COPY` (`BOOK_COPY_ID`),
+  KEY `FK_TRANSACTION_DETAIL_TRANSACTION` (`TRANSACTION_ID`),
+  CONSTRAINT `FK_TRANSACTION_DETAIL_BOOK_COPY` FOREIGN KEY (`BOOK_COPY_ID`) REFERENCES `BOOK_COPY` (`ID`),
+  CONSTRAINT `FK_TRANSACTION_DETAIL_TRANSACTION` FOREIGN KEY (`TRANSACTION_ID`) REFERENCES `TRANSACTION` (`ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `RESERVATION` (
   `ID` varchar(36) NOT NULL,
+  `QUANTITY` bigint NOT NULL DEFAULT 0,
   `USER_ID` varchar(36) NOT NULL,
-  `BOOK_ID` varchar(36) NOT NULL,
+  `BOOK_TITLE_ID` varchar(36) NOT NULL,
   `RESERVATION_DATE` varchar(50) NOT NULL,
   `EXPIRATION_DATE` varchar(50) NOT NULL,
   `STATUS` varchar(50) NOT NULL DEFAULT 'PENDING',
   PRIMARY KEY (`ID`),
   KEY `FK_RESERVATION_USER` (`USER_ID`),
-  KEY `FK_RESERVATION_BOOK` (`BOOK_ID`),
+  KEY `FK_RESERVATION_BOOK_TITLE` (`BOOK_TITLE_ID`),
   CONSTRAINT `FK_RESERVATION_USER` FOREIGN KEY (`USER_ID`) REFERENCES `USER` (`ID`),
-  CONSTRAINT `FK_RESERVATION_BOOK` FOREIGN KEY (`BOOK_ID`) REFERENCES `BOOK` (`ID`)
+  CONSTRAINT `FK_RESERVATION_BOOK_TITLE` FOREIGN KEY (`BOOK_TITLE_ID`) REFERENCES `BOOK_TITLE` (`ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Insert sample data
@@ -189,8 +204,8 @@ INSERT INTO `AUTHOR` (`ID`, `NAME`, `BIOGRAPHY`) VALUES
 ('a30', 'Lea Verou', 'Web developer, speaker, and author'),
 ('a31', 'Eric Matthes', 'Author and Python teacher');
 
--- 4. Insert Books
-INSERT INTO `BOOK` (`ID`, `IMAGE_URL`, `TITLE`, `ISBN`, `PUBLISHED_DATE`, `PUBLISHER_ID`) VALUES
+-- 4. Insert BookTitles
+INSERT INTO `BOOK_TITLE` (`ID`, `IMAGE_URL`, `TITLE`, `ISBN`, `PUBLISHED_DATE`, `PUBLISHER_ID`) VALUES
 ('b1', 'https://www.nxbctqg.org.vn/img_data/images/709508658395_169686323_466117254736983_3540351537507976746_n.jpg', 'Pháp luật đại cương', '978-604-57-5825-8', '2020', 'p1'),
 ('b2', 'https://nxbctqg.org.vn/img_data/images/773528504979_mllkc.jpg', 'Giáo trình triết học Mác - Lê Nin', '978-604-57-5826-5', '2021', 'p1'),
 ('b3', 'https://nxbctqg.org.vn/img_data/images/316029535454_KHONG-CHUYEN.jpg', 'Tư tưởng Hồ Chí Minh', '978-604-57-5827-2', '2021', 'p1'),
@@ -212,13 +227,121 @@ INSERT INTO `BOOK` (`ID`, `IMAGE_URL`, `TITLE`, `ISBN`, `PUBLISHED_DATE`, `PUBLI
 ('b19', 'https://m.media-amazon.com/images/I/81vjDV8Z2hL.jpg', 'Head First Design Patterns', '978-0596007126', '2004', 'p2'),
 ('b20', 'https://m.media-amazon.com/images/I/51cUVaBWZ0L.jpg', 'Fluent Python', '978-1491946008', '2015', 'p2'),
 ('b21', 'https://m.media-amazon.com/images/I/41cKAY88zSL.jpg', 'The UX Book', '978-0123852410', '2012', 'p4'),
-('b22', 'https://m.media-amazon.com/images/I/51Fg0sbL6BL.jpg', 'Spring in Action', '978-1617294945', '2018', 'p3'),
+('b22', 'https://m.media-amazon.com/images/I/51Fg0sbL6BL.jpg', 'Spring in Action', '978-1617294945','2018', 'p3'),
 ('b23', 'https://m.media-amazon.com/images/I/51fgdlGZlnL.jpg', 'Kotlin in Action', '978-1617293290', '2017', 'p3'),
 ('b24', 'https://m.media-amazon.com/images/I/41x6Ofq71dL.jpg', 'CSS Secrets', '978-1449372637', '2015', 'p2'),
 ('b25', 'https://m.media-amazon.com/images/I/51Fkt1hdOUL.jpg', 'Python Crash Course', '978-1593276034', '2015', 'p5');
 
--- 5. Insert Book-Author relationships
-INSERT INTO `BOOK_AUTHOR` (`BOOK_ID`, `AUTHOR_ID`) VALUES
+-- 5. Insert Book Copies
+INSERT INTO `BOOK_COPY` (`ID`, `BOOK_TITLE_ID`, `STATUS`) VALUES
+('bc1-1',  'b1',  'AVAILABLE'),
+('bc1-2',  'b1',  'AVAILABLE'),
+('bc1-3',  'b1',  'AVAILABLE'),
+('bc2-1',  'b2',  'AVAILABLE'),
+('bc2-2',  'b2',  'AVAILABLE'),
+('bc2-3',  'b2',  'AVAILABLE'),
+('bc3-1',  'b3',  'AVAILABLE'),
+('bc3-2',  'b3',  'AVAILABLE'),
+('bc3-3',  'b3',  'AVAILABLE'),
+('bc4-1',  'b4',  'AVAILABLE'),
+('bc4-2',  'b4',  'AVAILABLE'),
+('bc4-3',  'b4',  'AVAILABLE'),
+('bc5-1',  'b5',  'AVAILABLE'),
+('bc5-2',  'b5',  'AVAILABLE'),
+('bc5-3',  'b5',  'AVAILABLE'),
+('bc6-1',  'b6',  'AVAILABLE'),
+('bc6-2',  'b6',  'AVAILABLE'),
+('bc6-3',  'b6',  'AVAILABLE'),
+('bc6-4',  'b6',  'AVAILABLE'),
+('bc7-1',  'b7',  'AVAILABLE'),
+('bc7-2',  'b7',  'AVAILABLE'),
+('bc7-3',  'b7',  'AVAILABLE'),
+('bc7-4',  'b7',  'AVAILABLE'),
+('bc8-1',  'b8',  'AVAILABLE'),
+('bc8-2',  'b8',  'AVAILABLE'),
+('bc8-3',  'b8',  'AVAILABLE'),
+('bc8-4',  'b8',  'AVAILABLE'),
+('bc9-1',  'b9',  'AVAILABLE'),
+('bc9-2',  'b9',  'AVAILABLE'),
+('bc9-3',  'b9',  'AVAILABLE'),
+('bc9-4',  'b9',  'AVAILABLE'),
+('bc10-1', 'b10', 'AVAILABLE'),
+('bc10-2', 'b10', 'AVAILABLE'),
+('bc10-3', 'b10', 'AVAILABLE'),
+('bc10-4', 'b10', 'AVAILABLE'),
+('bc11-1', 'b11', 'AVAILABLE'),
+('bc11-2', 'b11', 'AVAILABLE'),
+('bc11-3', 'b11', 'AVAILABLE'),
+('bc11-4', 'b11', 'AVAILABLE'),
+('bc12-1', 'b12', 'AVAILABLE'),
+('bc12-2', 'b12', 'AVAILABLE'),
+('bc12-3', 'b12', 'AVAILABLE'),
+('bc12-4', 'b12', 'AVAILABLE'),
+('bc13-1', 'b13', 'AVAILABLE'),
+('bc13-2', 'b13', 'AVAILABLE'),
+('bc13-3', 'b13', 'AVAILABLE'),
+('bc13-4', 'b13', 'AVAILABLE'),
+('bc14-1', 'b14', 'AVAILABLE'),
+('bc14-2', 'b14', 'AVAILABLE'),
+('bc14-3', 'b14', 'AVAILABLE'),
+('bc14-4', 'b14', 'AVAILABLE'),
+('bc15-1', 'b15', 'AVAILABLE'),
+('bc15-2', 'b15', 'AVAILABLE'),
+('bc15-3', 'b15', 'AVAILABLE'),
+('bc15-4', 'b15', 'AVAILABLE'),
+('bc16-1', 'b16', 'AVAILABLE'),
+('bc16-2', 'b16', 'AVAILABLE'),
+('bc16-3', 'b16', 'AVAILABLE'),
+('bc16-4', 'b16', 'AVAILABLE'),
+('bc16-5', 'b16', 'AVAILABLE'),
+('bc17-1', 'b17', 'AVAILABLE'),
+('bc17-2', 'b17', 'AVAILABLE'),
+('bc17-3', 'b17', 'AVAILABLE'),
+('bc17-4', 'b17', 'AVAILABLE'),
+('bc17-5', 'b17', 'AVAILABLE'),
+('bc18-1', 'b18', 'AVAILABLE'),
+('bc18-2', 'b18', 'AVAILABLE'),
+('bc18-3', 'b18', 'AVAILABLE'),
+('bc18-4', 'b18', 'AVAILABLE'),
+('bc18-5', 'b18', 'AVAILABLE'),
+('bc19-1', 'b19', 'AVAILABLE'),
+('bc19-2', 'b19', 'AVAILABLE'),
+('bc19-3', 'b19', 'AVAILABLE'),
+('bc19-4', 'b19', 'AVAILABLE'),
+('bc19-5', 'b19', 'AVAILABLE'),
+('bc20-1', 'b20', 'AVAILABLE'),
+('bc20-2', 'b20', 'AVAILABLE'),
+('bc20-3', 'b20', 'AVAILABLE'),
+('bc20-4', 'b20', 'AVAILABLE'),
+('bc20-5', 'b20', 'AVAILABLE'),
+('bc21-1', 'b21', 'AVAILABLE'),
+('bc21-2', 'b21', 'AVAILABLE'),
+('bc21-3', 'b21', 'AVAILABLE'),
+('bc21-4', 'b21', 'AVAILABLE'),
+('bc21-5', 'b21', 'AVAILABLE'),
+('bc22-1', 'b22', 'AVAILABLE'),
+('bc22-2', 'b22', 'AVAILABLE'),
+('bc22-3', 'b22', 'AVAILABLE'),
+('bc22-4', 'b22', 'AVAILABLE'),
+('bc22-5', 'b22', 'AVAILABLE'),
+('bc23-1', 'b23', 'AVAILABLE'),
+('bc23-2', 'b23', 'AVAILABLE'),
+('bc23-3', 'b23', 'AVAILABLE'),
+('bc23-4', 'b23', 'AVAILABLE'),
+('bc23-5', 'b23', 'AVAILABLE'),
+('bc24-1', 'b24', 'AVAILABLE'),
+('bc24-2', 'b24', 'AVAILABLE'),
+('bc24-3', 'b24', 'AVAILABLE'),
+('bc24-4', 'b24', 'AVAILABLE'),
+('bc24-5', 'b24', 'AVAILABLE'),
+('bc25-1', 'b25', 'AVAILABLE'),
+('bc25-2', 'b25', 'AVAILABLE'),
+('bc25-3', 'b25', 'AVAILABLE'),
+('bc25-4', 'b25', 'AVAILABLE'),
+('bc25-5', 'b25', 'AVAILABLE');
+
+-- 6. Insert Book-Author relationships
+INSERT INTO `BOOK_AUTHOR` (`BOOK_TITLE_ID`, `AUTHOR_ID`) VALUES
 ('b1', 'a1'),
 ('b2', 'a2'),
 ('b3', 'a3'),
@@ -253,8 +376,8 @@ INSERT INTO `BOOK_AUTHOR` (`BOOK_ID`, `AUTHOR_ID`) VALUES
 ('b24', 'a30'),
 ('b25', 'a31');
 
--- 6. Insert Book-Category relationships
-INSERT INTO `BOOK_CATEGORY` (`BOOK_ID`, `CATEGORY_ID`) VALUES
+-- 7. Insert Book-Category relationships
+INSERT INTO `BOOK_CATEGORY` (`BOOK_TITLE_ID`, `CATEGORY_ID`) VALUES
 ('b1', 'c1'),
 ('b2', 'c1'),
 ('b3', 'c1'),
@@ -285,81 +408,72 @@ INSERT INTO `BOOK_CATEGORY` (`BOOK_ID`, `CATEGORY_ID`) VALUES
 ('b24', 'c3'),
 ('b25', 'c4');
 
--- 7. Insert Users
-INSERT INTO `USER` (`ID`, `NAME`, `EMAIL`, `PASSWORD`, `ROLE`) VALUES
-('u1', 'Admin', 'admin@library.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'ADMIN'),
-('u2', 'John Doe', 'john@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
-('u3', 'Jane Smith', 'jane@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
-('u4', 'Bob Johnson', 'bob@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
-('u5', 'Alice Williams', 'alice@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
-('u6', 'Michael Brown', 'michael@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
-('u7', 'Emily Davis', 'emily@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER');
-
--- 8. Insert Inventory
-INSERT INTO `INVENTORY` (`BOOK_ID`, `AMOUNT`) VALUES
-('b1', 5),
-('b2', 3),
-('b3', 4),
-('b4', 2),
-('b5', 6),
-('b6', 8),
-('b7', 4),
-('b8', 3),
-('b9', 5),
-('b10', 2),
-('b11', 6),
-('b12', 3),
-('b13', 4),
-('b14', 7),
-('b15', 2),
-('b16', 3),
-('b17', 5),
-('b18', 2),
-('b19', 4),
-('b20', 3),
-('b21', 2),
-('b22', 6),
-('b23', 4),
-('b24', 3),
-('b25', 7);
+-- 8. Insert Users
+INSERT INTO `USER` (`ID`, `NAME`, `CCCD`, `DOB`, `EMAIL`, `PASSWORD`, `ROLE`)VALUES
+('u1', 'Admin', '012345678901', '2005-12-22', 'admin@library.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'ADMIN'),
+('u2', 'John Doe', '012345678902', '2001-02-12', 'john@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
+('u3', 'Jane Smith', '012345678903', '2000-01-01', 'jane@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
+('u4', 'Bob Johnson', '012345678904', '1998-05-11', 'bob@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
+('u5', 'Alice Williams', '012345678905', '2003-09-14', 'alice@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
+('u6', 'Michael Brown', '012345678906', '2005-09-14', 'michael@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
+('u7', 'Emily Davis', '012345678907', '2008-11-25', 'emily@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER');
 
 -- 9. Insert Reviews
-INSERT INTO `REVIEW` (`ID`, `USER_ID`, `BOOK_ID`, `SCORE`, `COMMENT`, `DATE`, `TITLE`) VALUES
-('r1', 'u2', 'b6', 5, 'A must-read for software developers. Changed how I think about code.', '2023-01-15', 'Excellent Book'),
-('r2', 'u3', 'b6', 4, 'Great principles but some examples are outdated.', '2023-02-10', 'Good Read'),
-('r3', 'u4', 'b7', 5, 'Finally understood closures after reading this.', '2023-01-20', 'Very Helpful'),
-('r4', 'u5', 'b8', 5, 'Classic book on design patterns. Still relevant today.', '2023-03-05', 'Classic Reference'),
-('r5', 'u6', 'b9', 4, 'Great insights on JavaScript good practices.', '2023-02-15', 'Useful Guide'),
-('r6', 'u7', 'b10', 5, 'Changed how I think about UX design. Simple and effective.', '2023-01-10', 'UX Bible'),
-('r7', 'u2', 'b13', 4, 'Excellent introduction to JavaScript programming.', '2023-03-15', 'Great for Beginners'),
-('r8', 'u3', 'b15', 5, 'Best React book I\'ve read. Great examples.', '2023-02-20', 'React Master Class'),
-('r9', 'u4', 'b16', 4, 'Makes algorithms accessible and fun to learn.', '2023-01-25', 'Fun Learning'),
-('r10', 'u5', 'b17', 5, 'Comprehensive guide to modern data systems.', '2023-03-10', 'Data Systems Deep Dive');
+INSERT INTO `REVIEW` (`ID`, `USER_ID`, `BOOK_TITLE_ID`, `STAR`, `COMMENT`, `DATE`) VALUES
+('r1', 'u2', 'b6', 5, 'A must-read for software developers. Changed how I think about code.', '2023-01-15'),
+('r2', 'u3', 'b6', 4, 'Great principles but some examples are outdated.', '2023-02-10'),
+('r3', 'u4', 'b7', 5, 'Finally understood closures after reading this.', '2023-01-20'),
+('r4', 'u5', 'b8', 5, 'Classic book on design patterns. Still relevant today.', '2023-03-05'),
+('r5', 'u6', 'b9', 4, 'Great insights on JavaScript good practices.', '2023-02-15'),
+('r6', 'u7', 'b10', 5, 'Changed how I think about UX design. Simple and effective.', '2023-01-10'),
+('r7', 'u2', 'b13', 4, 'Excellent introduction to JavaScript programming.', '2023-03-15'),
+('r8', 'u3', 'b15', 5, 'Best React book I\'ve read. Great examples.', '2023-02-20'),
+('r9', 'u4', 'b16', 4, 'Makes algorithms accessible and fun to learn.', '2023-01-25'),
+('r10', 'u5', 'b17', 5, 'Comprehensive guide to modern data systems.', '2023-03-10');
 
 -- 10. Insert Transactions
-INSERT INTO `TRANSACTION` (`ID`, `AMOUNT`, `USER_ID`, `BOOK_ID`, `BORROW_DATE`, `DUE_DATE`, `RETURN_DATE`) VALUES
-('t1', 110000, 'u2', 'b6', '2023-01-01', '2023-01-15', '2023-01-14'),
-('t2', 130000, 'u3', 'b7', '2023-01-05', '2023-01-19', '2023-01-18'),
-('t3', 150000,'u4', 'b8', '2023-01-10', '2023-01-24', '2023-01-20'),
-('t4', 170000, 'u5', 'b9', '2023-01-15', '2023-01-29', '2023-01-28'),
-('t5', 190000, 'u6', 'b10', '2023-01-20', '2023-02-03', '2023-02-01'),
-('t6', 210000, 'u7', 'b11', '2023-01-25', '2023-02-08', NULL),
-('t7', 230000, 'u2', 'b12', '2023-02-01', '2023-02-15', '2023-02-14'),
-('t8', 250000, 'u3', 'b13', '2023-02-05', '2023-02-19', '2023-02-17'),
-('t9', 270000, 'u4', 'b14', '2023-02-10', '2023-02-24', NULL),
-('t10', 300000, 'u5', 'b15', '2023-02-15', '2023-03-01', '2023-02-28'),
-('t11', 330000, 'u6', 'b16', '2023-02-20', '2023-03-06', '2023-03-05'),
-('t12', 370000, 'u7', 'b17', '2023-02-25', '2023-03-11', NULL),
-('t13', 400000, 'u2', 'b18', '2023-03-01', '2023-03-15', '2023-03-14'),
-('t14', 410000, 'u3', 'b19', '2023-03-05', '2023-03-19', '2023-03-18'),
-('t15', 430000, 'u4', 'b20', '2023-03-10', '2023-03-24', NULL);
+INSERT INTO `TRANSACTION` (`ID`, `USER_ID`, `BORROW_DATE`, `DUE_DATE`) VALUES
+('t1', 'u2', '2023-01-01', '2023-01-15'),
+('t2', 'u3', '2023-01-05', '2023-01-19'),
+('t3','u4', '2023-01-10', '2023-01-24'),
+('t4', 'u5', '2023-01-15', '2023-01-29'),
+('t5', 'u6', '2023-01-20', '2023-02-03'),
+('t6', 'u7', '2023-01-25', '2023-02-08'),
+('t7', 'u2', '2023-02-01', '2023-02-15'),
+('t8', 'u3', '2023-02-05', '2023-02-19'),
+('t9', 'u4', '2023-02-10', '2023-02-24'),
+('t10', 'u5', '2023-02-15', '2023-03-01'),
+('t11', 'u6', '2023-02-20', '2023-03-06'),
+('t12', 'u7', '2023-02-25', '2023-03-11'),
+('t13', 'u2', '2023-03-01', '2023-03-15'),
+('t14', 'u3', '2023-03-05', '2023-03-19'),
+('t15', 'u4', '2023-03-10', '2023-03-24');
 
--- 11. Insert Reservations
-INSERT INTO `RESERVATION` (`ID`, `USER_ID`, `BOOK_ID`, `RESERVATION_DATE`, `EXPIRATION_DATE`, `STATUS`) VALUES
-('res1', 'u2', 'b21', '2023-03-15', '2023-03-22', 'COMPLETED'),
-('res2', 'u3', 'b22', '2023-03-16', '2023-03-23', 'COMPLETED'),
-('res3', 'u4', 'b23', '2023-03-17', '2023-03-24', 'PENDING'),
-('res4', 'u5', 'b24', '2023-03-18', '2023-03-25', 'PENDING'),
-('res5', 'u6', 'b25', '2023-03-19', '2023-03-26', 'CANCELLED'),
-('res6', 'u7', 'b1', '2023-03-20', '2023-03-27', 'PENDING'),
-('res7', 'u2', 'b2', '2023-03-21', '2023-03-28', 'PENDING');
+-- 11 Insert Transaction Details
+INSERT INTO `TRANSACTION_DETAIL` (`TRANSACTION_ID`, `BOOK_COPY_ID`, `RETURNED_DATE`, `PENALTY_FEE`) VALUES
+('t1', 'bc1-1', NULL, 0),
+('t1', 'bc2-1', NULL, 0),
+('t2', 'bc3-1', NULL, 0),
+('t2', 'bc4-1', NULL, 0),
+('t3', 'bc5-1', NULL, 0),
+('t3', 'bc6-1', NULL, 0),
+('t4', 'bc7-1', NULL, 0),
+('t4', 'bc8-1', NULL, 0),
+('t5', 'bc9-1', NULL, 0),
+('t5', 'bc10-1', NULL, 0),
+('t6', 'bc11-1', NULL, 0),
+('t6', 'bc12-1', NULL, 0),
+('t7', 'bc13-1', NULL, 0),
+('t7', 'bc14-1', NULL, 0),
+('t8', 'bc15-1', NULL, 0),
+('t8', 'bc16-1', NULL, 0);
+
+-- 12 Insert Reservations
+INSERT INTO `RESERVATION` (`ID`, `QUANTITY`, `USER_ID`, `BOOK_TITLE_ID`, `RESERVATION_DATE`, `EXPIRATION_DATE`, `STATUS`) VALUES
+('res1', 2, 'u2', 'b21', '2023-03-15', '2023-03-22', 'COMPLETED'),
+('res2', 5, 'u3', 'b22', '2023-03-16', '2023-03-23', 'COMPLETED'),
+('res3', 1, 'u4', 'b23', '2023-03-17', '2023-03-24', 'PENDING'),
+('res4', 5, 'u5', 'b24', '2023-03-18', '2023-03-25', 'PENDING'),
+('res5', 6, 'u6', 'b25', '2023-03-19', '2023-03-26', 'CANCELLED'),
+('res6', 1, 'u7', 'b1', '2023-03-20', '2023-03-27', 'PENDING'),
+('res7', 2, 'u2', 'b2', '2023-03-21', '2023-03-28', 'PENDING');

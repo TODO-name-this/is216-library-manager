@@ -21,9 +21,9 @@ public class SecurityConfiguration {
         http.cors(Customizer.withDefaults());
 
         // Protect endpoints at /api/<type>/secure
-        http
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/books/secure/**",
+        http.authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/bookTitle/secure/**",
+                        "/api/bookCopy/secure/**",
                         "/api/reviews/secure/**",
                         "/api/messages/secure/**",
                         "/api/admin/secure/**")

@@ -1,6 +1,6 @@
 package com.todo.backend.config;
 
-import com.todo.backend.entity.Book;
+import com.todo.backend.entity.BookTitle;
 import com.todo.backend.entity.Review;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
@@ -23,7 +23,7 @@ public class RestApiConfig implements RepositoryRestConfigurer {
             HttpMethod.PATCH
         };
 
-        config.exposeIdsFor(Book.class);
+        config.exposeIdsFor(BookTitle.class);
         config.exposeIdsFor(Review.class);
 
         disableHttpMethods(config, unsupportedActions);

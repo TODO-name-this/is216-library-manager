@@ -1,6 +1,8 @@
 package com.todo.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -10,30 +12,41 @@ import lombok.Data;
 public class Reservation {
     @Id
     @Column(name = "ID")
-    @NotNull
+    @NotBlank(message = "Reservation ID is required")
     private String id;
 
     @Column(name = "RESERVATION_DATE")
+    @NotBlank(message = "Reservation date is required")
     private String reservationDate;
 
     @Column(name = "EXPIRATION_DATE")
+    @NotBlank(message = "Expiration date is required")
     private String expirationDate;
 
     @Column(name = "STATUS")
+    @NotBlank(message = "Status is required")
     private String status;
 
-    @Column(name = "BOOK_ID")
-    private String bookId;
+    @Column(name = "QUANTITY")
+    private int quantity;
+
+    @Column(name = "BOOK_TITLE_ID")
+    @NotBlank(message = "[Reservation] Book title ID is required")
+    private String bookTitleId;
 
     @Column(name = "USER_ID")
+    @NotBlank(message = "[Reservation] User ID is required")
     private String userId;
 
-    // Relationships with Book and User
-    @ManyToOne
-    @JoinColumn(name = "BOOK_ID", referencedColumnName = "ID", insertable = false, updatable = false)
-    private Book book;
+    // Relationship with BookTitle
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "BOOK_TITLE_ID", referencedColumnName = "ID", insertable = false, updatable = false)
+    private BookTitle bookTitle;
 
-    @ManyToOne
+    // Relationship with User
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "USER_ID", referencedColumnName = "ID", insertable = false, updatable = false)
     private User user;
 }
