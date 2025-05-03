@@ -3,7 +3,6 @@ package com.todo.backend.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Entity
@@ -27,12 +26,12 @@ public class Reservation {
     @NotBlank(message = "Status is required")
     private String status;
 
-    @Column(name = "QUANTITY")
-    private int quantity;
-
     @Column(name = "BOOK_TITLE_ID")
     @NotBlank(message = "[Reservation] Book title ID is required")
     private String bookTitleId;
+
+    @Column(name= "BOOK_COPY_ID")
+    private String bookCopyId;
 
     @Column(name = "USER_ID")
     @NotBlank(message = "[Reservation] User ID is required")
@@ -43,6 +42,12 @@ public class Reservation {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "BOOK_TITLE_ID", referencedColumnName = "ID", insertable = false, updatable = false)
     private BookTitle bookTitle;
+
+    // Relationship with BookCopy
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "BOOK_COPY_ID", referencedColumnName = "ID", insertable = false, updatable = false)
+    private BookCopy bookCopy;
 
     // Relationship with User
     @JsonIgnore

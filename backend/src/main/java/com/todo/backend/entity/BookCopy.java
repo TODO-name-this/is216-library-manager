@@ -26,12 +26,17 @@ public class BookCopy {
 
     // Relationship with BookTitle
     @JsonIgnore
-     @ManyToOne(fetch = FetchType.LAZY)
-     @JoinColumn(name = "BOOK_TITLE_ID", referencedColumnName = "ID", insertable = false, updatable = false)
-     private BookTitle bookTitle;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "BOOK_TITLE_ID", referencedColumnName = "ID", insertable = false, updatable = false)
+    private BookTitle bookTitle;
 
-     // Relationship with TransactionDetail
-     @JsonIgnore
-     @OneToMany(mappedBy = "bookCopy", fetch = FetchType.LAZY)
-     private List<TransactionDetail> transactionDetails;
+    // Relationship with Reservation
+    @JsonIgnore
+    @OneToMany(mappedBy = "bookCopy", fetch = FetchType.LAZY)
+    private List<Reservation> reservations;
+
+    // Relationship with TransactionDetail
+    @JsonIgnore
+    @OneToMany(mappedBy = "bookCopy", fetch = FetchType.LAZY)
+    private List<TransactionDetail> transactionDetails;
 }
