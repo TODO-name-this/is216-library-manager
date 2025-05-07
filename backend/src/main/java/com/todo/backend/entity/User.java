@@ -44,7 +44,7 @@ public class User {
     @Column(name = "ROLE")
     private String role;
 
-    @Column("BALANCE")
+    @Column(name = "BALANCE")
     private int balance;
 
     // Relationship with Review
