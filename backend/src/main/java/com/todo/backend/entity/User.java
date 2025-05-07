@@ -44,6 +44,9 @@ public class User {
     @Column(name = "ROLE")
     private String role;
 
+    @Column("BALANCE")
+    private int balance;
+
     // Relationship with Review
     @JsonIgnore
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true)

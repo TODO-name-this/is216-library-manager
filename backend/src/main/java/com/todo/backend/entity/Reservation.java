@@ -3,6 +3,7 @@ package com.todo.backend.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Entity
@@ -25,6 +26,10 @@ public class Reservation {
     @Column(name = "STATUS")
     @NotBlank(message = "Status is required")
     private String status;
+
+    @Column(name = "DEPOSIT")
+    @NotNull(message = "Deposit is required")
+    private int deposit;
 
     @Column(name = "BOOK_TITLE_ID")
     @NotBlank(message = "[Reservation] Book title ID is required")
