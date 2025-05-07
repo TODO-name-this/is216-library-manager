@@ -37,6 +37,6 @@ public class Transaction {
 
     // Relationship with TransactionDetail
     @JsonIgnore
-    @OneToMany(mappedBy = "transaction", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "transaction", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TransactionDetail> transactionDetails;
 }

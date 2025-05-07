@@ -1,5 +1,7 @@
 package com.todo.backend.controller;
 
+import com.todo.backend.dto.TransactionCreateDto;
+import com.todo.backend.dto.TransactionUpdateDto;
 import com.todo.backend.entity.Transaction;
 import com.todo.backend.service.TransactionService;
 import jakarta.validation.Valid;
@@ -18,13 +20,13 @@ public class TransactionController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createTransaction(@Valid @RequestBody Transaction transaction, BindingResult result) {
+    public ResponseEntity<?> createTransaction(@Valid @RequestBody TransactionCreateDto transactionCreateDto, BindingResult result) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            Transaction createdTransaction = transactionService.createTransaction(transaction);
+            Transaction createdTransaction = transactionService.createTransaction(transactionCreateDto);
             return ResponseEntity.ok(createdTransaction);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error creating transaction: " + e.getMessage());
@@ -32,13 +34,13 @@ public class TransactionController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateTransaction(@PathVariable String id, @Valid @RequestBody Transaction transaction, BindingResult result) {
+    public ResponseEntity<?> updateTransaction(@PathVariable String id, @Valid @RequestBody TransactionUpdateDto transactionUpdateDto, BindingResult result) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            Transaction updatedTransaction = transactionService.updateTransaction(transaction);
+            Transaction updatedTransaction = transactionService.updateTransaction(transactionUpdateDto);
             return ResponseEntity.ok(updatedTransaction);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error updating transaction: " + e.getMessage());
