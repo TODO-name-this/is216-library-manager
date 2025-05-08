@@ -55,6 +55,8 @@ public class TransactionService {
             if (bookCopy == null || !bookCopy.getStatus().equals("AVAILABLE")) {
                 throw new RuntimeException("BookCopy with ID " + bookCopyId + " is not available");
             }
+
+            bookCopy.setStatus("BORROWED");
         }
 
         // Create TransactionDetail
@@ -78,6 +80,9 @@ public class TransactionService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String today = currentDate.format(formatter);
 
+        Transaction existingTransaction = transactionRepository.findById(transactionUpdateDto.getTransaction().getId())
+                .orElseThrow(() -> new RuntimeException("Transaction with ID not found"));
+
         Transaction transaction = transactionUpdateDto.getTransaction();
         List<String> returnedBookCopies = transactionUpdateDto.getReturnedBookCopies();
         List<DamagedBookCopyDto> damagedBookCopies = transactionUpdateDto.getDamagedBookCopies();
@@ -87,8 +92,14 @@ public class TransactionService {
                 .map(TransactionDetail::getBookCopyId)
                 .toList());
 
-        if (!transactionRepository.existsById(transaction.getId())) {
-            throw new RuntimeException("Transaction with ID not found");
+        // Check if any duplicate book copies
+        List<String> allBookCopies = new ArrayList<>();
+        allBookCopies.addAll(returnedBookCopies);
+        allBookCopies.addAll(damagedBookCopies.stream().map(DamagedBookCopyDto::getBookCopyId).toList());
+        allBookCopies.addAll(removedBookCopies);
+
+        if (allBookCopies.size() != allBookCopies.stream().distinct().count()) {
+            throw new RuntimeException("Duplicate book copies found in the update request");
         }
 
         List<TransactionDetail> details = new ArrayList<>();
@@ -138,21 +149,42 @@ public class TransactionService {
                 throw new RuntimeException("BookCopy with ID " + bookCopyId + " is not part of this transaction");
             }
 
+            // Only remove if the book copy is returned
+            TransactionDetail transactionDetail = transactionDetailRepository.findByTransactionIdAndBookCopyId(transaction.getId(), bookCopyId);
+            if (transactionDetail.getReturnedDate() == null) {
+                throw new RuntimeException("BookCopy with ID " + bookCopyId + " must be returned before removal");
+            }
+
             borrowedBookCopies.remove(bookCopyId);
             BookCopy bookCopy = bookCopyRepository.findById(bookCopyId)
                     .orElseThrow(() -> new RuntimeException("BookCopy with ID " + bookCopyId + " not found"));
             bookCopy.setStatus("AVAILABLE");
         }
 
-        transaction.setTransactionDetails(details);
-        return transactionRepository.save(transaction);
+        // Keep remaining transaction details
+        for (String bookCopyId : borrowedBookCopies) {
+            TransactionDetail transactionDetail = transactionDetailRepository.findByTransactionIdAndBookCopyId(transaction.getId(), bookCopyId);
+            if (transactionDetail != null) {
+                details.add(transactionDetail);
+            }
+        }
+
+        // Never allow removing all book copies in a transaction
+        if (details.isEmpty()) {
+            throw new RuntimeException("Transaction must have at least one bookCopy");
+        }
+
+        // Update transaction details
+        existingTransaction.getTransactionDetails().clear();
+        existingTransaction.getTransactionDetails().addAll(details);
+        return transactionRepository.save(existingTransaction);
     }
 
     public void deleteTransaction(String id) {
         Transaction existingTransaction = transactionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Transaction not found"));
 
-        if (existingTransaction.getTransactionDetails().stream().anyMatch(detail -> detail.getReturnedDate() != null)) {
+        if (existingTransaction.getTransactionDetails().stream().anyMatch(detail -> detail.getReturnedDate() == null)) {
             throw new RuntimeException("Cannot delete transaction. Not all books have been returned.");
         }
 
