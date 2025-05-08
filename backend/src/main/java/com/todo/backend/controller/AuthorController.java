@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin("http://localhost:3000")
 @RestController
-@RequestMapping("/api/authors")
+@RequestMapping("/api/author")
 public class AuthorController {
     private final AuthorService authorService;
 
