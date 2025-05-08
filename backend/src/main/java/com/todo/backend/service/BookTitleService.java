@@ -1,7 +1,7 @@
 package com.todo.backend.service;
 
 import com.todo.backend.dao.BookTitleRepository;
-import com.todo.backend.dto.BookTitleDto;
+import com.todo.backend.dto.booktitle.BookTitleDto;
 import com.todo.backend.entity.BookAuthor;
 import com.todo.backend.entity.BookCategory;
 import com.todo.backend.entity.BookCopy;

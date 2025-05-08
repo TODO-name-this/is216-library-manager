@@ -1,4 +1,4 @@
-package com.todo.backend.dto;
+package com.todo.backend.dto.booktitle;
 
 import com.todo.backend.entity.BookTitle;
 import jakarta.validation.Valid;

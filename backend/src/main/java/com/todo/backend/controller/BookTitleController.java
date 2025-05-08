@@ -1,7 +1,6 @@
 package com.todo.backend.controller;
 
-import com.todo.backend.dao.BookTitleRepository;
-import com.todo.backend.dto.BookTitleDto;
+import com.todo.backend.dto.booktitle.BookTitleDto;
 import com.todo.backend.entity.BookTitle;
 import com.todo.backend.service.BookTitleService;
 import jakarta.validation.Valid;
