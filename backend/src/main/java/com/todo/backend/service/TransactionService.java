@@ -51,13 +51,26 @@ public class TransactionService {
             throw new RuntimeException("User can only borrow 5 books at a time");
         }
 
-        // Check if all books are available
+        // Check if all books are available, only one book copy per book title is allowed,
+        // and book title can be borrowed
+        List<String> allBookTitles = new ArrayList<>();
+
         for (String bookCopyId : bookCopyIds) {
             BookCopy bookCopy = bookCopyRepository.findById(bookCopyId)
                     .orElseThrow(() -> new RuntimeException("BookCopy with ID " + bookCopyId + " not found"));
 
             if (bookCopy == null || !bookCopy.getStatus().equals("AVAILABLE")) {
                 throw new RuntimeException("BookCopy with ID " + bookCopyId + " is not available");
+            }
+
+            if (allBookTitles.contains(bookCopy.getBookTitleId())) {
+                throw new RuntimeException("Only one book copy per book title is allowed");
+            }
+
+            allBookTitles.add(bookCopy.getBookTitleId());
+
+            if (!bookCopy.getBookTitle().isCanBorrow()) {
+                throw new RuntimeException("This book title cannot be borrowed");
             }
 
             bookCopy.setStatus("BORROWED");
