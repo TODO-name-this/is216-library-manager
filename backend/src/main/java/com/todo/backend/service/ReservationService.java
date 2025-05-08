@@ -1,9 +1,13 @@
 package com.todo.backend.service;
 
 import com.todo.backend.dao.BookCopyRepository;
+import com.todo.backend.dao.BookTitleRepository;
 import com.todo.backend.dao.ReservationRepository;
+import com.todo.backend.dao.UserRepository;
 import com.todo.backend.entity.BookCopy;
+import com.todo.backend.entity.BookTitle;
 import com.todo.backend.entity.Reservation;
+import com.todo.backend.entity.User;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -14,10 +18,14 @@ import java.util.List;
 public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final BookCopyRepository bookCopyRepository;
+    private final BookTitleRepository bookTitleRepository;
+    private final UserRepository userRepository;
 
-    public ReservationService(ReservationRepository reservationRepository, BookCopyRepository bookCopyRepository) {
+    public ReservationService(ReservationRepository reservationRepository, BookCopyRepository bookCopyRepository, BookTitleRepository bookTitleRepository, UserRepository userRepository) {
         this.reservationRepository = reservationRepository;
         this.bookCopyRepository = bookCopyRepository;
+        this.bookTitleRepository = bookTitleRepository;
+        this.userRepository = userRepository;
     }
 
     private void validateReservationRules(Reservation reservation) {
@@ -35,6 +43,14 @@ public class ReservationService {
                 throw new RuntimeException("User has already reserved this book");
             }
         }
+
+        // Check if the book title can be borrowed
+        BookTitle bookTitle = bookTitleRepository.findById(reservation.getBookTitleId())
+                .orElseThrow(() -> new RuntimeException("Book title not found"));
+
+        if (!bookTitle.isCanBorrow()) {
+            throw new RuntimeException("This book title cannot be reserved");
+        }
     }
 
     public Reservation createReservation(Reservation reservation) {
@@ -44,6 +60,18 @@ public class ReservationService {
 
         // Validate reservation rules
         validateReservationRules(reservation);
+
+        // Check if a user exists
+        User user = userRepository.findById(reservation.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Check if a user has enough balances to reserve
+        if (user.getBalance() < reservation.getDeposit()) {
+            throw new RuntimeException("User does not have enough balance to reserve");
+        }
+
+        // Deduct the deposit from the user's balance
+        user.setBalance(user.getBalance() - reservation.getDeposit());
 
         BookCopy availableBookCopy = bookCopyRepository.findFirstByBookTitleIdAndStatus(reservation.getBookTitleId(), "available");
         if (availableBookCopy == null) {
@@ -63,7 +91,7 @@ public class ReservationService {
         Reservation existingReservation = reservationRepository.findById(reservation.getId())
                 .orElseThrow(() -> new RuntimeException("Reservation ID does not exist"));
 
-        // If book title changes, validate and assign a new book copy
+        // If the book title changes, validate and assign a new book copy
         if (!existingReservation.getBookTitleId().equals(reservation.getBookTitleId())) {
             validateReservationRules(reservation);
 
@@ -92,12 +120,20 @@ public class ReservationService {
             throw new RuntimeException("Invalid status transition from COMPLETED to PENDING");
         }
 
-        if (existingReservation.getStatus().equals("PENDING")
-                && reservation.getStatus().equals("CANCELLED")) {
-            BookCopy bookCopy = bookCopyRepository.findById(existingReservation.getBookCopyId())
-                    .orElseThrow(() -> new RuntimeException("Book copy not found"));
-            bookCopy.setStatus("AVAILABLE");
-            bookCopyRepository.save(bookCopy);
+        // Return the book copy status and return the deposit if the status changes from PENDING to CANCELLED or COMPLETED
+        if (existingReservation.getStatus().equals("PENDING")) {
+            if (reservation.getStatus().equals("COMPLETED") || reservation.getStatus().equals("CANCELLED")) {
+                BookCopy bookCopy = bookCopyRepository.findById(existingReservation.getBookCopyId())
+                        .orElseThrow(() -> new RuntimeException("Book copy not found"));
+                bookCopy.setStatus("AVAILABLE");
+                bookCopyRepository.save(bookCopy);
+
+                // Return the deposit to the user
+                User user = userRepository.findById(existingReservation.getUserId())
+                        .orElseThrow(() -> new RuntimeException("User not found"));
+                user.setBalance(user.getBalance() + existingReservation.getDeposit());
+                userRepository.save(user);
+            }
         }
 
         // Update the reservation dates if they have changed
