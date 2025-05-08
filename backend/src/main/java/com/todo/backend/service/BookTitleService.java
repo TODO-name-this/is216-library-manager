@@ -1,13 +1,11 @@
 package com.todo.backend.service;
 
-import com.todo.backend.dao.AuthorRepository;
 import com.todo.backend.dao.BookTitleRepository;
 import com.todo.backend.dto.BookTitleDto;
 import com.todo.backend.entity.BookAuthor;
 import com.todo.backend.entity.BookCategory;
 import com.todo.backend.entity.BookCopy;
 import com.todo.backend.entity.BookTitle;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +24,14 @@ public class BookTitleService {
     public BookTitle createBookTitle(BookTitleDto bookTitleDto) {
         if (bookTitleRepository.existsById(bookTitleDto.getBookTitle().getId())) {
             throw new RuntimeException("Book title ID already exists");
+        }
+
+        if (bookTitleDto.getAuthorIds().size() != bookTitleDto.getAuthorIds().stream().distinct().count()) {
+            throw new RuntimeException("Duplicate author IDs found in the request");
+        }
+
+        if (bookTitleDto.getCategoryIds().size() != bookTitleDto.getCategoryIds().stream().distinct().count()) {
+            throw new RuntimeException("Duplicate category IDs found in the request");
         }
 
         BookTitle bookTitle = bookTitleDto.getBookTitle();

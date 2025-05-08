@@ -35,6 +35,10 @@ public class TransactionService {
         List<String> bookCopyIds = transactionCreateDto.getBookCopyIds();
         List<TransactionDetail> unreturnedDetails = transactionDetailRepository.findByUserIdAndNotReturned(transaction.getUserId());
 
+        if (bookCopyIds.size() != bookCopyIds.stream().distinct().count()) {
+            throw new RuntimeException("Duplicate book copies found in the request");
+        }
+
         if (transactionRepository.existsById(transaction.getId())) {
             throw new RuntimeException("Transaction with ID already exists");
         }
