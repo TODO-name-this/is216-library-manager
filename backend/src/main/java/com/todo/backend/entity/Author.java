@@ -2,9 +2,9 @@ package com.todo.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Entity
@@ -13,18 +13,16 @@ import java.util.List;
 public class Author {
     @Id
     @Column(name = "ID")
-    @NotBlank(message = "Author ID is required")
     private String id;
 
     @Column(name = "AVATAR_URL")
     private String avatarUrl;
 
     @Column(name = "NAME")
-    @NotBlank(message = "Author name is required")
     private String name;
 
     @Column(name = "BIRTHDAY")
-    private String birthday;
+    private LocalDate birthday;
 
     @Column(name = "BIOGRAPHY")
     private String biography;

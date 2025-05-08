@@ -2,9 +2,9 @@ package com.todo.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "RESERVATION")
@@ -12,34 +12,27 @@ import lombok.Data;
 public class Reservation {
     @Id
     @Column(name = "ID")
-    @NotBlank(message = "Reservation ID is required")
     private String id;
 
     @Column(name = "RESERVATION_DATE")
-    @NotBlank(message = "Reservation date is required")
-    private String reservationDate;
+    private LocalDate reservationDate;
 
     @Column(name = "EXPIRATION_DATE")
-    @NotBlank(message = "Expiration date is required")
-    private String expirationDate;
+    private LocalDate expirationDate;
 
     @Column(name = "STATUS")
-    @NotBlank(message = "Status is required")
     private String status;
 
     @Column(name = "DEPOSIT")
-    @NotNull(message = "Deposit is required")
     private int deposit;
 
     @Column(name = "BOOK_TITLE_ID")
-    @NotBlank(message = "[Reservation] Book title ID is required")
     private String bookTitleId;
 
     @Column(name= "BOOK_COPY_ID")
     private String bookCopyId;
 
     @Column(name = "USER_ID")
-    @NotBlank(message = "[Reservation] User ID is required")
     private String userId;
 
     // Relationship with BookTitle

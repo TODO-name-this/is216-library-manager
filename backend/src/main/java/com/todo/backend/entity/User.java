@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Entity
@@ -14,25 +15,20 @@ import java.util.List;
 public class User {
     @Id
     @Column(name = "ID")
-    @NotBlank(message = "User ID is required")
     private String id;
 
-    @NotBlank(message = "CCCD is required")
     @Column(name = "CCCD")
     private String cccd;
 
     @Column(name = "AVATAR_URL")
     private String avatarUrl;
 
-    @NotBlank(message = "Name is required")
     @Column(name = "NAME")
     private String name;
 
-    @NotBlank(message = "Birthday is required")
     @Column(name = "DOB")
-    private String dob;
+    private LocalDate dob;
 
-    @NotBlank(message = "Email is required")
     @Column(name = "EMAIL")
     private String email;
 

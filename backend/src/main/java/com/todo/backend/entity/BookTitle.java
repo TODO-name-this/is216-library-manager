@@ -2,10 +2,9 @@ package com.todo.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Entity
@@ -14,29 +13,24 @@ import java.util.List;
 public class BookTitle {
     @Id
     @Column(name = "ID")
-    @NotBlank(message = "BookTitle ID is required")
     private String id;
 
     @Column(name = "IMAGE_URL")
     private String imageUrl;
 
     @Column(name = "TITLE")
-    @NotBlank(message = "BookTitle title is required")
     private String title;
 
     @Column(name = "ISBN")
     private String isbn;
 
     @Column(name = "CAN_BORROW")
-    @NotNull(message = "BookTitle can borrow is required")
     private boolean canBorrow;
 
     @Column(name = "PUBLISHED_DATE")
-    @NotBlank(message = "BookTitle published date is required")
-    private String publishedDate;
+    private LocalDate publishedDate;
 
     @Column(name = "PUBLISHER_ID")
-    @NotBlank(message = "BookTitle publisher ID is required")
     private String publisherId;
 
     // Relationship with Publisher

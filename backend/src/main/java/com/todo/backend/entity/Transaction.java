@@ -2,10 +2,9 @@ package com.todo.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Entity
@@ -14,19 +13,15 @@ import java.util.List;
 public class Transaction {
     @Id
     @Column(name = "ID")
-    @NotBlank(message = "Transaction ID is required")
     private String id;
 
     @Column(name = "BORROW_DATE")
-    @NotBlank(message = "Borrow date is required")
-    private String borrowDate;
+    private LocalDate borrowDate;
 
     @Column(name = "DUE_DATE")
-    @NotBlank(message = "Due date is required")
-    private String dueDate;
+    private LocalDate dueDate;
 
     @Column(name = "USER_ID")
-    @NotBlank(message = "[Transaction] User ID is required")
     private String userId;
 
     // Relationship with User
