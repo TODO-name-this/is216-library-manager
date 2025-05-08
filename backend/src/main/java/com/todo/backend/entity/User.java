@@ -14,7 +14,8 @@ import java.util.List;
 @Data
 public class User {
     @Id
-    @Column(name = "ID")
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "ID", updatable = false, nullable = false, unique = true)
     private String id;
 
     @Column(name = "CCCD")
