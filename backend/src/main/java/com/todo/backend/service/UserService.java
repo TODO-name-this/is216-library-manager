@@ -29,6 +29,10 @@ public class UserService {
             throw new IllegalArgumentException("CCCD already exists");
         }
 
+        if (user.getBalance() < 0) {
+            throw new IllegalArgumentException("Balance cannot be negative");
+        }
+
         return userRepository.save(user);
     }
 
@@ -42,6 +46,10 @@ public class UserService {
         }
         if (userRepository.existsByCccd(user.getCccd())) {
             throw new IllegalArgumentException("CCCD already exists");
+        }
+
+        if (user.getBalance() < 0) {
+            throw new IllegalArgumentException("Balance cannot be negative");
         }
         
         return userRepository.save(user);
