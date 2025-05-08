@@ -51,6 +51,11 @@ public class ReservationService {
         if (!bookTitle.isCanBorrow()) {
             throw new RuntimeException("This book title cannot be reserved");
         }
+
+        // Check if the deposit is valid
+        if (reservation.getDeposit() < 0) {
+            throw new RuntimeException("Deposit cannot be negative");
+        }
     }
 
     public Reservation createReservation(Reservation reservation) {
