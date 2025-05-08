@@ -20,7 +20,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getUserById(@PathVariable String id) {
+    public ResponseEntity<?> getUser(@PathVariable String id) {
         try {
             ResponseUserDto user = userService.getUser(id);
             return ResponseEntity.ok(user);
