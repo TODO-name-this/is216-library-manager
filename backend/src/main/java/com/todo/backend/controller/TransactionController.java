@@ -1,7 +1,7 @@
 package com.todo.backend.controller;
 
-import com.todo.backend.dto.TransactionCreateDto;
-import com.todo.backend.dto.TransactionUpdateDto;
+import com.todo.backend.dto.transaction.TransactionCreateDto;
+import com.todo.backend.dto.transaction.TransactionUpdateDto;
 import com.todo.backend.entity.Transaction;
 import com.todo.backend.service.TransactionService;
 import jakarta.validation.Valid;

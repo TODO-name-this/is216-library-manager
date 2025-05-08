@@ -3,9 +3,9 @@ package com.todo.backend.service;
 import com.todo.backend.dao.BookCopyRepository;
 import com.todo.backend.dao.TransactionDetailRepository;
 import com.todo.backend.dao.TransactionRepository;
-import com.todo.backend.dto.DamagedBookCopyDto;
-import com.todo.backend.dto.TransactionCreateDto;
-import com.todo.backend.dto.TransactionUpdateDto;
+import com.todo.backend.dto.transaction.DamagedBookCopyDto;
+import com.todo.backend.dto.transaction.TransactionCreateDto;
+import com.todo.backend.dto.transaction.TransactionUpdateDto;
 import com.todo.backend.entity.BookCopy;
 import com.todo.backend.entity.Transaction;
 import com.todo.backend.entity.TransactionDetail;
@@ -13,7 +13,6 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 

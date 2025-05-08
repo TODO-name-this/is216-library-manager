@@ -1,4 +1,4 @@
-package com.todo.backend.dto;
+package com.todo.backend.dto.transaction;
 
 import com.todo.backend.entity.Transaction;
 import jakarta.validation.Valid;

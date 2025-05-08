@@ -1,4 +1,4 @@
-package com.todo.backend.dto;
+package com.todo.backend.dto.transaction;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
