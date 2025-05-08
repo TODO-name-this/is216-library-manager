@@ -1,5 +1,7 @@
 package com.todo.backend.controller;
 
+import com.todo.backend.dto.category.CategoryDto;
+import com.todo.backend.dto.category.ResponseCategoryDto;
 import com.todo.backend.entity.Category;
 import com.todo.backend.service.CategoryService;
 import jakarta.validation.Valid;
@@ -17,14 +19,24 @@ public class CategoryController {
         this.categoryService = categoryService;
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getCategory(@PathVariable String id) {
+        try {
+            ResponseCategoryDto category = categoryService.getCategory(id);
+            return ResponseEntity.ok(category);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching category: " + e.getMessage());
+        }
+    }
+
     @PostMapping
-    public ResponseEntity<?> createCategory(@Valid @RequestBody Category category, BindingResult result) {
+    public ResponseEntity<?> createCategory(@Valid @RequestBody CategoryDto categoryDto, BindingResult result) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            Category createdCategory = categoryService.createCategory(category);
+            ResponseCategoryDto createdCategory = categoryService.createCategory(categoryDto);
             return ResponseEntity.ok(createdCategory);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error creating category: " + e.getMessage());
@@ -32,13 +44,13 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateCategory(@PathVariable String id, @Valid @RequestBody Category category, BindingResult result) {
+    public ResponseEntity<?> updateCategory(@PathVariable String id, @Valid @RequestBody CategoryDto categoryDto, BindingResult result) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            Category updatedCategory = categoryService.updateCategory(category);
+            ResponseCategoryDto updatedCategory = categoryService.updateCategory(id, categoryDto);
             return ResponseEntity.ok(updatedCategory);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error updating category: " + e.getMessage());

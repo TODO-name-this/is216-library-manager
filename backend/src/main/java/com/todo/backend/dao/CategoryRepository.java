@@ -10,4 +10,7 @@ import java.util.List;
 public interface CategoryRepository extends JpaRepository<Category, String> {
     @Query("SELECT a FROM Category a JOIN a.bookCategories ba WHERE ba.bookTitle.id = :bookTitleId")
     List<Category> findByBookTitleId(@RequestParam("bookTitleId") String bookTitleId);
+
+    boolean existsByName(String name);
+    boolean existsByNameAndIdNot(String name, String id);
 }
