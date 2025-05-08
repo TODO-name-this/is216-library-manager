@@ -93,9 +93,7 @@ public class TransactionService {
     }
 
     public Transaction updateTransaction(TransactionUpdateDto transactionUpdateDto) {
-        LocalDate currentDate = LocalDate.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        String today = currentDate.format(formatter);
+        LocalDate today = LocalDate.now();
 
         Transaction existingTransaction = transactionRepository.findById(transactionUpdateDto.getTransaction().getId())
                 .orElseThrow(() -> new RuntimeException("Transaction with ID not found"));
