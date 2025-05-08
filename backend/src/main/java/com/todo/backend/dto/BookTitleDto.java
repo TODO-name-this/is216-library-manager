@@ -13,6 +13,11 @@ public class BookTitleDto {
     @NotNull(message = "Book title cannot be null")
     private BookTitle bookTitle;
 
+    @Valid
+    @NotNull(message = "Missing author ids")
     private List<String> authorIds;
+
+    @Valid
+    @NotNull(message = "Missing category ids")
     private List<String> categoryIds;
 }
