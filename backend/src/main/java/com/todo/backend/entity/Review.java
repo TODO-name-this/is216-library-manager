@@ -11,6 +11,7 @@ import java.time.LocalDate;
 @Data
 public class Review {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "ID")
     private String id;
 
