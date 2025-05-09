@@ -60,8 +60,10 @@ public class TransactionService {
 
         List<String> bookCopyIds = createTransactionDto.getBookCopyIds();
         List<TransactionDetail> unreturnedDetails = transactionDetailRepository.findByUserIdAndNotReturned(transaction.getUserId());
-        List<String> unreturnedBookCopyIds = unreturnedDetails.stream()
-                .map(TransactionDetail::getBookCopyId)
+        List<String> unreturnedBookTitleIds = unreturnedDetails.stream()
+                .map(detail -> bookCopyRepository.findById(detail.getBookCopyId())
+                        .orElseThrow(() -> new RuntimeException("BookCopy with ID " + detail.getBookCopyId() + " not found"))
+                        .getBookTitleId())
                 .toList();
 
         if (bookCopyIds.size() != bookCopyIds.stream().distinct().count()) {
@@ -78,7 +80,7 @@ public class TransactionService {
 
         // Check if all books are available, only one book copy per book title is allowed,
         // and book title can be borrowed
-        List<String> allBookTitles = new ArrayList<>(unreturnedBookCopyIds);
+        List<String> allBookTitles = new ArrayList<>(unreturnedBookTitleIds);
 
         for (String bookCopyId : bookCopyIds) {
             BookCopy bookCopy = bookCopyRepository.findById(bookCopyId)
