@@ -13,6 +13,8 @@ public interface BookTitleRepository extends JpaRepository<BookTitle, String> {
     Page<BookTitle> findByTitleContainingIgnoreCase(@RequestParam("title") String title, Pageable pageable);
     BookTitle findByIsbn(@RequestParam("isbn") String isbn);
 
+    boolean existsByIsbn(String isbn);
+
     // Search by publisher
     Page<BookTitle> findByPublisherId(@RequestParam("publisherId") String publisherId, Pageable pageable);
     Page<BookTitle> findByPublisherNameContainingIgnoreCase(@RequestParam("publisherName") String publisherName, Pageable pageable);

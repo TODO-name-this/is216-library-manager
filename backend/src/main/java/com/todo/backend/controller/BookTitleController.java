@@ -1,14 +1,12 @@
 package com.todo.backend.controller;
 
 import com.todo.backend.dto.booktitle.BookTitleDto;
-import com.todo.backend.entity.BookTitle;
+import com.todo.backend.dto.booktitle.ResponseBookTitleDto;
 import com.todo.backend.service.BookTitleService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-
-// TODO: Need security
 
 @CrossOrigin("http://localhost:3000")
 @RestController
@@ -20,6 +18,16 @@ public class BookTitleController {
         this.bookTitleService = bookTitleService;
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getBookTitle(@PathVariable String id) {
+        try {
+            ResponseBookTitleDto bookTitle = bookTitleService.getBookTitle(id);
+            return ResponseEntity.ok(bookTitle);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching book title: " + e.getMessage());
+        }
+    }
+
     @PostMapping
     public ResponseEntity<?> createBookTitle(@Valid @RequestBody BookTitleDto bookTitleDto, BindingResult result) {
         try {
@@ -27,7 +35,7 @@ public class BookTitleController {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            BookTitle createdBookTitle = bookTitleService.createBookTitle(bookTitleDto);
+            ResponseBookTitleDto createdBookTitle = bookTitleService.createBookTitle(bookTitleDto);
             return ResponseEntity.ok(createdBookTitle);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error creating book title: " + e.getMessage());
@@ -41,7 +49,7 @@ public class BookTitleController {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            BookTitle updatedBookTitle = bookTitleService.updateBookTitle(bookTitleDto);
+            ResponseBookTitleDto updatedBookTitle = bookTitleService.updateBookTitle(id, bookTitleDto);
             return ResponseEntity.ok(updatedBookTitle);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error updating book title: " + e.getMessage());

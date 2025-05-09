@@ -12,6 +12,7 @@ import java.util.List;
 @Data
 public class BookTitle {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "ID")
     private String id;
 
