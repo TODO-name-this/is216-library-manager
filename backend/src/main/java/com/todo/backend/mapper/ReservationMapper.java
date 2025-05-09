@@ -10,10 +10,10 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface ReservationMapper {
     Reservation toEntity(ReservationDto reservationDto);
-    ReservationDto toReservationDto(Reservation reservation);
+    ReservationDto toDto(Reservation reservation);
 
     @Mapping(target = "id", ignore = true)
     void updateEntityFromDto(ReservationDto reservationDto, @MappingTarget Reservation reservation);
 
-    ResponseReservationDto toResponseReservationDto(Reservation reservation);
+    ResponseReservationDto toResponseDto(Reservation reservation);
 }

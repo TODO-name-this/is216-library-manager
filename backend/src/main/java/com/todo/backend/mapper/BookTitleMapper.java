@@ -10,10 +10,10 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface BookTitleMapper {
     BookTitle toEntity(BookTitleDto bookTitleDto);
-    BookTitleDto toBookTitleDto(BookTitle bookTitle);
+    BookTitleDto toDto(BookTitle bookTitle);
 
     @Mapping(target = "id", ignore = true)
     void updateEntityFromDto(BookTitleDto bookTitleDto, @MappingTarget BookTitle bookTitle);
 
-    ResponseBookTitleDto toResponseBookTitleDto(BookTitle bookTitle);
+    ResponseBookTitleDto toResponseDto(BookTitle bookTitle);
 }

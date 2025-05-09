@@ -10,10 +10,10 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface CategoryMapper {
     Category toEntity(CategoryDto categoryDto);
-    CategoryDto toCategoryDto(Category category);
+    CategoryDto toDto(Category category);
 
     @Mapping(target = "id", ignore = true)
     void updateCategoryFromDto(CategoryDto categoryDto, @MappingTarget Category category);
 
-    ResponseCategoryDto toResponseCategoryDto(Category category);
+    ResponseCategoryDto toResponseDto(Category category);
 }

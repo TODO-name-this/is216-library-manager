@@ -10,10 +10,10 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface ReviewMapper {
     Review toEntity(ReviewDto dto);
-    ReviewDto toReviewDto(Review review);
+    ReviewDto toDto(Review review);
 
     @Mapping(target = "id", ignore = true)
     void updateEntityFromDto(ReviewDto dto, @MappingTarget Review review);
 
-    ResponseReviewDto toResponseReviewDto(Review review);
+    ResponseReviewDto toResponseDto(Review review);
 }
