@@ -1,7 +1,5 @@
 package com.todo.backend.dto.author;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Id;
 import lombok.Builder;
 import lombok.Data;
 
