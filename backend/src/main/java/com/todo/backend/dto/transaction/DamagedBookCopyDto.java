@@ -1,17 +1,14 @@
 package com.todo.backend.dto.transaction;
 
-import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class DamagedBookCopyDto {
-    @Valid
     @NotBlank(message = "BookCopy ID cannot be null or empty")
     private String bookCopyId;
 
-    @Valid
-    @NotNull(message = "Penalty fee cannot be null or empty")
+    @Min(value = 0, message = "Penalty fee must be at least 0")
     private int penaltyFee;
 }

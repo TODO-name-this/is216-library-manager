@@ -4,11 +4,15 @@ import com.todo.backend.dao.BookCopyRepository;
 import com.todo.backend.dao.TransactionDetailRepository;
 import com.todo.backend.dao.TransactionRepository;
 import com.todo.backend.dto.transaction.DamagedBookCopyDto;
-import com.todo.backend.dto.transaction.TransactionCreateDto;
-import com.todo.backend.dto.transaction.TransactionUpdateDto;
+import com.todo.backend.dto.transaction.CreateTransactionDto;
+import com.todo.backend.dto.transaction.ResponseTransactionDto;
+import com.todo.backend.dto.transaction.UpdateTransactionDto;
+import com.todo.backend.dto.transactiondetail.ResponseTransactionDetailDto;
 import com.todo.backend.entity.BookCopy;
 import com.todo.backend.entity.Transaction;
 import com.todo.backend.entity.TransactionDetail;
+import com.todo.backend.mapper.TransactionDetailMapper;
+import com.todo.backend.mapper.TransactionMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -22,24 +26,46 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final TransactionDetailRepository transactionDetailRepository;
     private final BookCopyRepository bookCopyRepository;
+    private final TransactionMapper transactionMapper;
+    private final TransactionDetailMapper transactionDetailMapper;
 
-    public TransactionService(TransactionRepository transactionRepository, TransactionDetailRepository transactionDetailRepository, BookCopyRepository bookCopyRepository) {
+    public TransactionService(TransactionRepository transactionRepository, TransactionDetailRepository transactionDetailRepository, BookCopyRepository bookCopyRepository, TransactionMapper transactionMapper, TransactionDetailMapper transactionDetailMapper) {
         this.transactionRepository = transactionRepository;
         this.transactionDetailRepository = transactionDetailRepository;
         this.bookCopyRepository = bookCopyRepository;
+        this.transactionMapper = transactionMapper;
+        this.transactionDetailMapper = transactionDetailMapper;
     }
 
-    public Transaction createTransaction(TransactionCreateDto transactionCreateDto) {
-        Transaction transaction = transactionCreateDto.getTransaction();
-        List<String> bookCopyIds = transactionCreateDto.getBookCopyIds();
+    public ResponseTransactionDto getTransaction(String id) {
+        Transaction transaction = transactionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Transaction with ID not found"));
+
+        List<ResponseTransactionDetailDto> details = transaction.getTransactionDetails()
+                .stream()
+                .map(transactionDetailMapper::toResponseDto)
+                .toList();
+
+        ResponseTransactionDto responseTransactionDto = transactionMapper.toResponseDto(transaction);
+        responseTransactionDto.setDetails(details);
+
+        return responseTransactionDto;
+    }
+
+    public ResponseTransactionDto createTransaction(CreateTransactionDto createTransactionDto) {
+        LocalDate today = LocalDate.now();
+
+        Transaction transaction = transactionMapper.toEntity(createTransactionDto);
+        transaction.setBorrowDate(today);
+
+        List<String> bookCopyIds = createTransactionDto.getBookCopyIds();
         List<TransactionDetail> unreturnedDetails = transactionDetailRepository.findByUserIdAndNotReturned(transaction.getUserId());
+        List<String> unreturnedBookCopyIds = unreturnedDetails.stream()
+                .map(TransactionDetail::getBookCopyId)
+                .toList();
 
         if (bookCopyIds.size() != bookCopyIds.stream().distinct().count()) {
             throw new RuntimeException("Duplicate book copies found in the request");
-        }
-
-        if (transactionRepository.existsById(transaction.getId())) {
-            throw new RuntimeException("Transaction with ID already exists");
         }
 
         if (bookCopyIds.isEmpty()) {
@@ -52,7 +78,7 @@ public class TransactionService {
 
         // Check if all books are available, only one book copy per book title is allowed,
         // and book title can be borrowed
-        List<String> allBookTitles = new ArrayList<>();
+        List<String> allBookTitles = new ArrayList<>(unreturnedBookCopyIds);
 
         for (String bookCopyId : bookCopyIds) {
             BookCopy bookCopy = bookCopyRepository.findById(bookCopyId)
@@ -75,6 +101,8 @@ public class TransactionService {
             bookCopy.setStatus("BORROWED");
         }
 
+        transactionRepository.saveAndFlush(transaction);
+
         // Create TransactionDetail
         List<TransactionDetail> details = new ArrayList<>();
         for (String bookCopyId : bookCopyIds) {
@@ -88,49 +116,58 @@ public class TransactionService {
         }
 
         transaction.setTransactionDetails(details);
-        return transactionRepository.save(transaction);
+        transactionRepository.save(transaction);
+
+        List<ResponseTransactionDetailDto> responseDetails = details.stream()
+                .map(transactionDetailMapper::toResponseDto)
+                .toList();
+
+        ResponseTransactionDto responseTransactionDto = transactionMapper.toResponseDto(transaction);
+        responseTransactionDto.setDetails(responseDetails);
+
+        return responseTransactionDto;
     }
 
-    public Transaction updateTransaction(TransactionUpdateDto transactionUpdateDto) {
+    public ResponseTransactionDto updateTransaction(String id, UpdateTransactionDto updateTransactionDto) {
         LocalDate today = LocalDate.now();
 
-        Transaction existingTransaction = transactionRepository.findById(transactionUpdateDto.getTransaction().getId())
+        Transaction existingTransaction = transactionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Transaction with ID not found"));
 
-        Transaction transaction = transactionUpdateDto.getTransaction();
-        List<String> returnedBookCopies = transactionUpdateDto.getReturnedBookCopies();
-        List<DamagedBookCopyDto> damagedBookCopies = transactionUpdateDto.getDamagedBookCopies();
-        List<String> removedBookCopies = transactionUpdateDto.getRemovedBookCopies();
-        List<String> borrowedBookCopies = new ArrayList<>(transactionDetailRepository.findByTransactionId(transaction.getId())
+        // Update transaction (due date)
+        transactionMapper.updateEntityFromDto(updateTransactionDto, existingTransaction);
+
+        List<String> returnedBookCopyIds = updateTransactionDto.getReturnedBookCopyIds();
+        List<DamagedBookCopyDto> damagedBookCopyIds = updateTransactionDto.getDamagedBookCopyIds();
+        List<String> borrowedBookCopyIds = new ArrayList<>(transactionDetailRepository.findByTransactionId(existingTransaction.getId())
                 .stream()
                 .map(TransactionDetail::getBookCopyId)
                 .toList());
 
         // Check if any duplicate book copies
-        List<String> allBookCopies = new ArrayList<>();
-        allBookCopies.addAll(returnedBookCopies);
-        allBookCopies.addAll(damagedBookCopies.stream().map(DamagedBookCopyDto::getBookCopyId).toList());
-        allBookCopies.addAll(removedBookCopies);
+        List<String> allBookCopyIds = new ArrayList<>();
+        allBookCopyIds.addAll(returnedBookCopyIds);
+        allBookCopyIds.addAll(damagedBookCopyIds.stream().map(DamagedBookCopyDto::getBookCopyId).toList());
 
-        if (allBookCopies.size() != allBookCopies.stream().distinct().count()) {
+        if (allBookCopyIds.size() != allBookCopyIds.stream().distinct().count()) {
             throw new RuntimeException("Duplicate book copies found in the update request");
         }
 
         List<TransactionDetail> details = new ArrayList<>();
 
         // Update returned book copies
-        for (String bookCopyId : returnedBookCopies) {
-            if (!borrowedBookCopies.contains(bookCopyId)) {
+        for (String bookCopyId : returnedBookCopyIds) {
+            if (!borrowedBookCopyIds.contains(bookCopyId)) {
                 throw new RuntimeException("BookCopy with ID " + bookCopyId + " is not part of this transaction");
             }
 
-            borrowedBookCopies.remove(bookCopyId);
+            borrowedBookCopyIds.remove(bookCopyId);
             BookCopy bookCopy = bookCopyRepository.findById(bookCopyId)
                     .orElseThrow(() -> new RuntimeException("BookCopy with ID " + bookCopyId + " not found"));
             bookCopy.setStatus("AVAILABLE");
 
             TransactionDetail transactionDetail = new TransactionDetail();
-            transactionDetail.setTransactionId(transaction.getId());
+            transactionDetail.setTransactionId(existingTransaction.getId());
             transactionDetail.setBookCopyId(bookCopyId);
             transactionDetail.setReturnedDate(today);
             transactionDetail.setPenaltyFee(0);
@@ -138,60 +175,46 @@ public class TransactionService {
         }
 
         // Update damaged book copies
-        for (DamagedBookCopyDto damagedBookCopy : damagedBookCopies) {
+        for (DamagedBookCopyDto damagedBookCopy : damagedBookCopyIds) {
             String bookCopyId = damagedBookCopy.getBookCopyId();
-            if (!borrowedBookCopies.contains(bookCopyId)) {
+            if (!borrowedBookCopyIds.contains(bookCopyId)) {
                 throw new RuntimeException("BookCopy with ID " + bookCopyId + " is not part of this transaction");
             }
 
-            borrowedBookCopies.remove(bookCopyId);
+            borrowedBookCopyIds.remove(bookCopyId);
             BookCopy bookCopy = bookCopyRepository.findById(bookCopyId)
                     .orElseThrow(() -> new RuntimeException("BookCopy with ID " + bookCopyId + " not found"));
             bookCopy.setStatus("DAMAGED");
 
             TransactionDetail transactionDetail = new TransactionDetail();
-            transactionDetail.setTransactionId(transaction.getId());
+            transactionDetail.setTransactionId(existingTransaction.getId());
             transactionDetail.setBookCopyId(bookCopyId);
             transactionDetail.setReturnedDate(today);
             transactionDetail.setPenaltyFee(damagedBookCopy.getPenaltyFee());
             details.add(transactionDetail);
         }
 
-        // Update removed book copies
-        for (String bookCopyId : removedBookCopies) {
-            if (!borrowedBookCopies.contains(bookCopyId)) {
-                throw new RuntimeException("BookCopy with ID " + bookCopyId + " is not part of this transaction");
-            }
-
-            // Only remove if the book copy is returned
-            TransactionDetail transactionDetail = transactionDetailRepository.findByTransactionIdAndBookCopyId(transaction.getId(), bookCopyId);
-            if (transactionDetail.getReturnedDate() == null) {
-                throw new RuntimeException("BookCopy with ID " + bookCopyId + " must be returned before removal");
-            }
-
-            borrowedBookCopies.remove(bookCopyId);
-            BookCopy bookCopy = bookCopyRepository.findById(bookCopyId)
-                    .orElseThrow(() -> new RuntimeException("BookCopy with ID " + bookCopyId + " not found"));
-            bookCopy.setStatus("AVAILABLE");
-        }
-
         // Keep remaining transaction details
-        for (String bookCopyId : borrowedBookCopies) {
-            TransactionDetail transactionDetail = transactionDetailRepository.findByTransactionIdAndBookCopyId(transaction.getId(), bookCopyId);
+        for (String bookCopyId : borrowedBookCopyIds) {
+            TransactionDetail transactionDetail = transactionDetailRepository.findByTransactionIdAndBookCopyId(existingTransaction.getId(), bookCopyId);
             if (transactionDetail != null) {
                 details.add(transactionDetail);
             }
         }
 
-        // Never allow removing all book copies in a transaction
-        if (details.isEmpty()) {
-            throw new RuntimeException("Transaction must have at least one bookCopy");
-        }
-
         // Update transaction details
         existingTransaction.getTransactionDetails().clear();
         existingTransaction.getTransactionDetails().addAll(details);
-        return transactionRepository.save(existingTransaction);
+        transactionRepository.save(existingTransaction);
+
+        List<ResponseTransactionDetailDto> responseDetails = details.stream()
+                .map(transactionDetailMapper::toResponseDto)
+                .toList();
+
+        ResponseTransactionDto responseTransactionDto = transactionMapper.toResponseDto(existingTransaction);
+        responseTransactionDto.setDetails(responseDetails);
+
+        return responseTransactionDto;
     }
 
     public void deleteTransaction(String id) {

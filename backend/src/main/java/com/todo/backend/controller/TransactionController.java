@@ -1,7 +1,8 @@
 package com.todo.backend.controller;
 
-import com.todo.backend.dto.transaction.TransactionCreateDto;
-import com.todo.backend.dto.transaction.TransactionUpdateDto;
+import com.todo.backend.dto.transaction.CreateTransactionDto;
+import com.todo.backend.dto.transaction.ResponseTransactionDto;
+import com.todo.backend.dto.transaction.UpdateTransactionDto;
 import com.todo.backend.entity.Transaction;
 import com.todo.backend.service.TransactionService;
 import jakarta.validation.Valid;
@@ -19,14 +20,24 @@ public class TransactionController {
         this.transactionService = transactionService;
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getTransaction(@PathVariable String id) {
+        try {
+            ResponseTransactionDto transactionDto = transactionService.getTransaction(id);
+            return ResponseEntity.ok(transactionDto);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching transaction: " + e.getMessage());
+        }
+    }
+
     @PostMapping
-    public ResponseEntity<?> createTransaction(@Valid @RequestBody TransactionCreateDto transactionCreateDto, BindingResult result) {
+    public ResponseEntity<?> createTransaction(@Valid @RequestBody CreateTransactionDto createTransactionDto, BindingResult result) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            Transaction createdTransaction = transactionService.createTransaction(transactionCreateDto);
+            ResponseTransactionDto createdTransaction = transactionService.createTransaction(createTransactionDto);
             return ResponseEntity.ok(createdTransaction);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error creating transaction: " + e.getMessage());
@@ -34,13 +45,13 @@ public class TransactionController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateTransaction(@PathVariable String id, @Valid @RequestBody TransactionUpdateDto transactionUpdateDto, BindingResult result) {
+    public ResponseEntity<?> updateTransaction(@PathVariable String id, @Valid @RequestBody UpdateTransactionDto updateTransactionDto, BindingResult result) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            Transaction updatedTransaction = transactionService.updateTransaction(transactionUpdateDto);
+            ResponseTransactionDto updatedTransaction = transactionService.updateTransaction(id, updateTransactionDto);
             return ResponseEntity.ok(updatedTransaction);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error updating transaction: " + e.getMessage());

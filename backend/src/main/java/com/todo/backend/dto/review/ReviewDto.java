@@ -9,6 +9,7 @@ import java.time.LocalDate;
 @Data
 @Builder
 public class ReviewDto {
+    @NotNull(message = "Date of review is required")
     @PastOrPresent(message = "Date of review must be in the past or present")
     private LocalDate date;
 
