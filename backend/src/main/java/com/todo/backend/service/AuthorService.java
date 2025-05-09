@@ -4,7 +4,6 @@ import com.todo.backend.dao.AuthorRepository;
 import com.todo.backend.dto.author.AuthorDto;
 import com.todo.backend.dto.author.ResponseAuthorDto;
 import com.todo.backend.entity.Author;
-import com.todo.backend.entity.BookAuthor;
 import com.todo.backend.mapper.AuthorMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;

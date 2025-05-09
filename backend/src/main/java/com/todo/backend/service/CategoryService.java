@@ -23,7 +23,7 @@ public class CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Category ID does not exist"));
 
-        return categoryMapper.toResponseCategoryDto(category);
+        return categoryMapper.toResponseDto(category);
     }
 
     public ResponseCategoryDto createCategory(CategoryDto categoryDto) {
@@ -35,7 +35,7 @@ public class CategoryService {
 
         categoryRepository.save(category);
 
-        return categoryMapper.toResponseCategoryDto(category);
+        return categoryMapper.toResponseDto(category);
     }
 
     public ResponseCategoryDto updateCategory(String id, CategoryDto categoryDto) {
@@ -50,7 +50,7 @@ public class CategoryService {
 
         categoryRepository.save(existingCategory);
 
-        return categoryMapper.toResponseCategoryDto(existingCategory);
+        return categoryMapper.toResponseDto(existingCategory);
     }
 
     public void deleteCategory(String id) {

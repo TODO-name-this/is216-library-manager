@@ -29,7 +29,7 @@ public class ReviewService {
         Review review = reviewRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Review with ID does not exist"));
 
-        return reviewMapper.toResponseReviewDto(review);
+        return reviewMapper.toResponseDto(review);
     }
 
     public ResponseReviewDto createReview(ReviewDto reviewDto) {
@@ -39,7 +39,7 @@ public class ReviewService {
 
         reviewRepository.save(review);
 
-        return reviewMapper.toResponseReviewDto(review);
+        return reviewMapper.toResponseDto(review);
     }
 
     public ResponseReviewDto updateReview(String id, ReviewDto reviewDto) {
@@ -54,7 +54,7 @@ public class ReviewService {
 
         reviewRepository.save(existingReview);
 
-        return reviewMapper.toResponseReviewDto(existingReview);
+        return reviewMapper.toResponseDto(existingReview);
     }
 
     public void deleteReview(String id) {

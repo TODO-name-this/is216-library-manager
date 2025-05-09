@@ -37,7 +37,7 @@ public class ReservationService {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
 
-        return reservationMapper.toResponseReservationDto(reservation);
+        return reservationMapper.toResponseDto(reservation);
     }
 
     public ResponseReservationDto createReservation(ReservationDto reservationDto) {
@@ -70,7 +70,7 @@ public class ReservationService {
 
         reservationRepository.save(reservation);
 
-        return reservationMapper.toResponseReservationDto(reservation);
+        return reservationMapper.toResponseDto(reservation);
     }
 
     public ResponseReservationDto updateReservation(String id, ReservationDto reservationDto) {
@@ -130,7 +130,7 @@ public class ReservationService {
 
         reservationRepository.save(existingReservation);
 
-        return reservationMapper.toResponseReservationDto(existingReservation);
+        return reservationMapper.toResponseDto(existingReservation);
     }
 
     public void deleteReservation(String id) {

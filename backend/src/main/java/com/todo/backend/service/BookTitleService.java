@@ -29,7 +29,7 @@ public class BookTitleService {
         BookTitle bookTitle = bookTitleRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Book title ID does not exist"));
 
-        ResponseBookTitleDto responseBookTitleDto = bookTitleMapper.toResponseBookTitleDto(bookTitle);
+        ResponseBookTitleDto responseBookTitleDto = bookTitleMapper.toResponseDto(bookTitle);
         List<String> authorIds = new ArrayList<>(bookTitle.getBookAuthors().stream().map(BookAuthor::getAuthorId).toList());
         List<String> categoryIds = new ArrayList<>(bookTitle.getBookCategories().stream().map(BookCategory::getCategoryId).toList());
 
@@ -76,7 +76,7 @@ public class BookTitleService {
 
         bookTitleRepository.save(bookTitle);
 
-        ResponseBookTitleDto responseBookTitleDto = bookTitleMapper.toResponseBookTitleDto(bookTitle);
+        ResponseBookTitleDto responseBookTitleDto = bookTitleMapper.toResponseDto(bookTitle);
         responseBookTitleDto.setAuthorIds(bookTitleDto.getAuthorIds());
         responseBookTitleDto.setCategoryIds(bookTitleDto.getCategoryIds());
 
@@ -115,7 +115,7 @@ public class BookTitleService {
 
         bookTitleRepository.save(existingBookTitle);
 
-        ResponseBookTitleDto responseBookTitleDto = bookTitleMapper.toResponseBookTitleDto(existingBookTitle);
+        ResponseBookTitleDto responseBookTitleDto = bookTitleMapper.toResponseDto(existingBookTitle);
         responseBookTitleDto.setAuthorIds(bookTitleDto.getAuthorIds());
         responseBookTitleDto.setCategoryIds(bookTitleDto.getCategoryIds());
 
