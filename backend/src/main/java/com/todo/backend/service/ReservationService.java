@@ -11,26 +11,36 @@ import com.todo.backend.entity.BookTitle;
 import com.todo.backend.entity.Reservation;
 import com.todo.backend.entity.User;
 import com.todo.backend.mapper.ReservationMapper;
+import com.todo.backend.scheduler.jobs.ReservationExpiryJob;
 import jakarta.transaction.Transactional;
+import org.quartz.*;
 import org.springframework.stereotype.Service;
 
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
 
 @Service
 @Transactional
 public class ReservationService {
+    private final String RESERVATION_GROUP = "reservationGroup";
+    private final String RESERVATION_EXPIRY_JOB_PREFIX = "reservationExpiryJob_";
+    private final String RESERVATION_EXPIRY_TRIGGER_PREFIX = "reservationExpiryTrigger_";
+
     private final ReservationRepository reservationRepository;
     private final BookCopyRepository bookCopyRepository;
     private final BookTitleRepository bookTitleRepository;
     private final UserRepository userRepository;
     private final ReservationMapper reservationMapper;
+    private final Scheduler scheduler;
 
-    public ReservationService(ReservationRepository reservationRepository, BookCopyRepository bookCopyRepository, BookTitleRepository bookTitleRepository, UserRepository userRepository, ReservationMapper reservationMapper) {
+    public ReservationService(ReservationRepository reservationRepository, BookCopyRepository bookCopyRepository, BookTitleRepository bookTitleRepository, UserRepository userRepository, ReservationMapper reservationMapper, Scheduler scheduler) {
         this.reservationRepository = reservationRepository;
         this.bookCopyRepository = bookCopyRepository;
         this.bookTitleRepository = bookTitleRepository;
         this.userRepository = userRepository;
         this.reservationMapper = reservationMapper;
+        this.scheduler = scheduler;
     }
 
     public ResponseReservationDto getReservation(String id) {
@@ -56,6 +66,7 @@ public class ReservationService {
 
         // Deduct the deposit from the user's balance
         user.setBalance(user.getBalance() - reservationDto.getDeposit());
+        userRepository.save(user);
 
         BookCopy availableBookCopy = bookCopyRepository.findFirstByBookTitleIdAndStatus(reservationDto.getBookTitleId(), "available");
         if (availableBookCopy == null) {
@@ -69,6 +80,9 @@ public class ReservationService {
         bookCopyRepository.save(availableBookCopy);
 
         reservationRepository.save(reservation);
+
+        // Schedule a job to set the reservation as expired after expiration date
+        createExpiryJob(reservation);
 
         return reservationMapper.toResponseDto(reservation);
     }
@@ -130,6 +144,18 @@ public class ReservationService {
 
         reservationRepository.save(existingReservation);
 
+        // Reschedule the job to set the reservation as expired after the new expiration date
+        JobKey jobKey = new JobKey(RESERVATION_EXPIRY_JOB_PREFIX + existingReservation.getId(), RESERVATION_GROUP);
+        try {
+            scheduler.deleteJob(jobKey);
+        }
+        catch (SchedulerException e) {
+            throw new RuntimeException("Failed to delete old reservation expiry job: ", e);
+        }
+
+        createExpiryJob(existingReservation);
+
+
         return reservationMapper.toResponseDto(existingReservation);
     }
 
@@ -142,6 +168,36 @@ public class ReservationService {
         }
 
         reservationRepository.delete(existingReservation);
+    }
+
+    public void setExpiredReservation(String id) {
+        Reservation existingReservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Reservation not found"));
+
+        if (existingReservation.getStatus().equals("PENDING")) {
+            finalizeReservation(existingReservation, "EXPIRED");
+        }
+    }
+
+    private void createExpiryJob(Reservation reservation) {
+        JobDetail jobDetail = JobBuilder.newJob(ReservationExpiryJob.class)
+                .withIdentity(RESERVATION_EXPIRY_JOB_PREFIX + reservation.getId(), RESERVATION_GROUP)
+                .usingJobData("reservationId", reservation.getId())
+                .usingJobData("retryCount", 0)
+                .build();
+
+        Trigger trigger = TriggerBuilder.newTrigger()
+                .withIdentity(RESERVATION_EXPIRY_TRIGGER_PREFIX + reservation.getId(), RESERVATION_GROUP)
+                .startAt(Date.from(reservation.getExpirationDate().atStartOfDay().atZone(ZoneId.systemDefault()).toInstant()))
+                .forJob(jobDetail)
+                .build();
+
+        try {
+            scheduler.scheduleJob(jobDetail, trigger);
+        }
+        catch (SchedulerException e) {
+            throw new RuntimeException("Failed to schedule reservation expiry job: ", e);
+        }
     }
 
     private void finalizeReservation(Reservation reservation, String status) {
@@ -159,6 +215,15 @@ public class ReservationService {
 
         reservation.setStatus(status);
         reservationRepository.save(reservation);
+
+        // Delete the scheduled job for the reservation
+        JobKey jobKey = new JobKey(RESERVATION_EXPIRY_JOB_PREFIX + reservation.getId(), RESERVATION_GROUP);
+        try {
+            scheduler.deleteJob(jobKey);
+        }
+        catch (SchedulerException e) {
+            throw new RuntimeException("Failed to delete reservation expiry job: ", e);
+        }
     }
 
     private void validateReservationRules(Reservation reservation) {

@@ -10,11 +10,11 @@ import java.time.LocalDate;
 @Builder
 public class ReservationDto {
     @NotNull(message = "Reservation date is required")
-    @FutureOrPresent
+    @FutureOrPresent(message = "Reservation date must be today or in the future")
     private LocalDate reservationDate;
 
     @NotNull(message = "Expiration date is required")
-    @Future
+    @Future(message = "Expiration date must be in the future")
     private LocalDate expirationDate;
 
     @NotBlank(message = "Status is required")
