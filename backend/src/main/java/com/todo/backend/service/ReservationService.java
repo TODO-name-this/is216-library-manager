@@ -4,8 +4,10 @@ import com.todo.backend.dao.BookCopyRepository;
 import com.todo.backend.dao.BookTitleRepository;
 import com.todo.backend.dao.ReservationRepository;
 import com.todo.backend.dao.UserRepository;
-import com.todo.backend.dto.reservation.ReservationDto;
+import com.todo.backend.dto.reservation.CreateReservationDto;
 import com.todo.backend.dto.reservation.ResponseReservationDto;
+import com.todo.backend.dto.reservation.UpdateReservationDto;
+import com.todo.backend.dto.reservation.PartialUpdateReservationDto;
 import com.todo.backend.entity.BookCopy;
 import com.todo.backend.entity.BookTitle;
 import com.todo.backend.entity.Reservation;
@@ -15,7 +17,10 @@ import com.todo.backend.scheduler.jobs.ReservationExpiryJob;
 import jakarta.transaction.Transactional;
 import org.quartz.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
@@ -50,30 +55,33 @@ public class ReservationService {
         return reservationMapper.toResponseDto(reservation);
     }
 
-    public ResponseReservationDto createReservation(ReservationDto reservationDto) {
-        Reservation reservation = reservationMapper.toEntity(reservationDto);
+    public ResponseReservationDto createReservation(CreateReservationDto createReservationDto) {
+        LocalDate today = LocalDate.now();
+
+        Reservation reservation = reservationMapper.toEntity(createReservationDto);
 
         validateReservationRules(reservation);
 
         // Check if a user exists
-        User user = userRepository.findById(reservationDto.getUserId())
+        User user = userRepository.findById(createReservationDto.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         // Check if a user has enough balances to reserve
-        if (user.getBalance() < reservationDto.getDeposit()) {
+        if (user.getBalance() < createReservationDto.getDeposit()) {
             throw new RuntimeException("User does not have enough balance to reserve");
         }
 
         // Deduct the deposit from the user's balance
-        user.setBalance(user.getBalance() - reservationDto.getDeposit());
+        user.setBalance(user.getBalance() - createReservationDto.getDeposit());
         userRepository.save(user);
 
-        BookCopy availableBookCopy = bookCopyRepository.findFirstByBookTitleIdAndStatus(reservationDto.getBookTitleId(), "available");
+        BookCopy availableBookCopy = bookCopyRepository.findFirstByBookTitleIdAndStatus(createReservationDto.getBookTitleId(), "available");
         if (availableBookCopy == null) {
             throw new RuntimeException("No available book copy for reservation");
         }
         reservation.setBookCopyId(availableBookCopy.getId());
         reservation.setStatus("PENDING");
+        reservation.setReservationDate(today);
 
         // Update the status of the book copy to "reserved"
         availableBookCopy.setStatus("RESERVED");
@@ -81,51 +89,39 @@ public class ReservationService {
 
         reservationRepository.save(reservation);
 
-        // Schedule a job to set the reservation as expired after expiration date
-        createExpiryJob(reservation);
+        // Only create the job if the transaction is committed successfully
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                TransactionSynchronization.super.afterCommit();
+                createExpiryJob(reservation);
+            }
+        });
 
         return reservationMapper.toResponseDto(reservation);
     }
 
-    public ResponseReservationDto updateReservation(String id, ReservationDto reservationDto) {
+    public ResponseReservationDto updateReservation(String id, UpdateReservationDto updateReservationDto) {
         Reservation existingReservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
 
-        // Prevent updating a reservation that is already completed or canceled
-        if (existingReservation.getStatus().equals("COMPLETED") || existingReservation.getStatus().equals("CANCELLED")) {
-            throw new RuntimeException("Can't update a reservation that is already completed or canceled");
-        }
-
-        Reservation updatedReservation = reservationMapper.toEntity(reservationDto);
-
-        // If the book title ID or user_id changes, cancel the old reservation and create a new one
-        // Note: Only cancel the reservation if there's a book copy available
-        if (!existingReservation.getBookTitleId().equals(updatedReservation.getBookTitleId()) ||
-            !existingReservation.getUserId().equals(updatedReservation.getUserId())) {
-            // Cancel the old reservation
-            finalizeReservation(existingReservation, "CANCELLED");
-
-            // Create a new reservation
-            return createReservation(reservationDto);
-        }
-
-        // Return the book copy status and return the deposit if the status changes from PENDING to CANCELLED or COMPLETED
-        if (existingReservation.getStatus().equals("PENDING")) {
-            if (updatedReservation.getStatus().equals("COMPLETED") || updatedReservation.getStatus().equals("CANCELLED")) {
-                finalizeReservation(existingReservation, updatedReservation.getStatus());
-            }
+        // Prevent updating a reservation that is already COMPLETED, CANCELLED or EXPIRED
+        if (existingReservation.getStatus().equals("COMPLETED") ||
+            existingReservation.getStatus().equals("CANCELLED") ||
+            existingReservation.getStatus().equals("EXPIRED")) {
+            throw new RuntimeException("Can't update a reservation that is already compeleted, cancelled or expired");
         }
 
         // Update the user's balance if the deposit changes
-        if (existingReservation.getDeposit() > updatedReservation.getDeposit()) {
-            int difference = existingReservation.getDeposit() - updatedReservation.getDeposit();
+        if (existingReservation.getDeposit() > updateReservationDto.getDeposit()) {
+            int difference = existingReservation.getDeposit() - updateReservationDto.getDeposit();
             User user = userRepository.findById(existingReservation.getUserId())
                     .orElseThrow(() -> new RuntimeException("User not found"));
             user.setBalance(user.getBalance() + difference);
             userRepository.save(user);
         }
-        else if (existingReservation.getDeposit() < updatedReservation.getDeposit()) {
-            int difference = updatedReservation.getDeposit() - existingReservation.getDeposit();
+        else if (existingReservation.getDeposit() < updateReservationDto.getDeposit()) {
+            int difference = updateReservationDto.getDeposit() - existingReservation.getDeposit();
             User user = userRepository.findById(existingReservation.getUserId())
                     .orElseThrow(() -> new RuntimeException("User not found"));
             if (user.getBalance() < difference) {
@@ -135,26 +131,45 @@ public class ReservationService {
             userRepository.save(user);
         }
 
-        if (updatedReservation.getReservationDate().isAfter(updatedReservation.getExpirationDate())) {
-            throw new RuntimeException("Reservation date cannot be after the expiration date");
-        }
+        LocalDate oldExpirationDate = existingReservation.getExpirationDate();
 
         // Update the reservation details
-        reservationMapper.updateEntityFromDto(reservationDto, existingReservation);
-
+        reservationMapper.updateEntityFromDto(updateReservationDto, existingReservation);
         reservationRepository.save(existingReservation);
 
-        // Reschedule the job to set the reservation as expired after the new expiration date
-        JobKey jobKey = new JobKey(RESERVATION_EXPIRY_JOB_PREFIX + existingReservation.getId(), RESERVATION_GROUP);
-        try {
-            scheduler.deleteJob(jobKey);
-        }
-        catch (SchedulerException e) {
-            throw new RuntimeException("Failed to delete old reservation expiry job: ", e);
+        // Update scheduled job if the expiration date has changed
+        if (!oldExpirationDate.equals(existingReservation.getExpirationDate())) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    TransactionSynchronization.super.afterCommit();
+                    deleteScheduledJob(existingReservation);
+                    createExpiryJob(existingReservation);
+                }
+            });
         }
 
-        createExpiryJob(existingReservation);
+        return reservationMapper.toResponseDto(existingReservation);
+    }
 
+    public ResponseReservationDto partialUpdateReservation(String id, PartialUpdateReservationDto partialUpdateReservationDto) {
+        String status = partialUpdateReservationDto.getStatus();
+
+        if (!status.equals("COMPLETED") && !status.equals("CANCELLED")) {
+            throw new RuntimeException("Status must be either COMPLETED or CANCELLED");
+        }
+
+        Reservation existingReservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Reservation not found"));
+
+        // Prevent updating a reservation that is already COMPLETED, CANCELLED or EXPIRED
+        if (existingReservation.getStatus().equals("COMPLETED") ||
+            existingReservation.getStatus().equals("CANCELLED") ||
+            existingReservation.getStatus().equals("EXPIRED")) {
+            throw new RuntimeException("Can't update a reservation that is already completed, cancelled or expired");
+        }
+
+        finalizeReservation(existingReservation, status);
 
         return reservationMapper.toResponseDto(existingReservation);
     }
@@ -200,6 +215,20 @@ public class ReservationService {
         }
     }
 
+    private void deleteScheduledJob(Reservation reservation) {
+        JobKey jobKey = new JobKey(RESERVATION_EXPIRY_JOB_PREFIX + reservation.getId(), RESERVATION_GROUP);
+        try {
+            if (!scheduler.checkExists(jobKey)) {
+                return;
+            }
+
+            scheduler.deleteJob(jobKey);
+        }
+        catch (SchedulerException e) {
+            throw new RuntimeException("Failed to delete reservation expiry job: ", e);
+        }
+    }
+
     private void finalizeReservation(Reservation reservation, String status) {
         // Restore the book copy status to "AVAILABLE"
         BookCopy bookCopy = bookCopyRepository.findById(reservation.getBookCopyId())
@@ -216,14 +245,7 @@ public class ReservationService {
         reservation.setStatus(status);
         reservationRepository.save(reservation);
 
-        // Delete the scheduled job for the reservation
-        JobKey jobKey = new JobKey(RESERVATION_EXPIRY_JOB_PREFIX + reservation.getId(), RESERVATION_GROUP);
-        try {
-            scheduler.deleteJob(jobKey);
-        }
-        catch (SchedulerException e) {
-            throw new RuntimeException("Failed to delete reservation expiry job: ", e);
-        }
+        deleteScheduledJob(reservation);
     }
 
     private void validateReservationRules(Reservation reservation) {
@@ -253,11 +275,6 @@ public class ReservationService {
         // Check if the deposit is valid
         if (reservation.getDeposit() < 0) {
             throw new RuntimeException("Deposit cannot be negative");
-        }
-
-        // Check if the reservation date is before the expiration date
-        if (reservation.getReservationDate().isAfter(reservation.getExpirationDate())) {
-            throw new RuntimeException("Reservation date cannot be after the expiration date");
         }
     }
 }
