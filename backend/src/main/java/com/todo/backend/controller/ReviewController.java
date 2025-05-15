@@ -1,6 +1,7 @@
 package com.todo.backend.controller;
 
-import com.todo.backend.entity.Review;
+import com.todo.backend.dto.review.ResponseReviewDto;
+import com.todo.backend.dto.review.ReviewDto;
 import com.todo.backend.service.ReviewService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -17,14 +18,24 @@ public class ReviewController {
         this.reviewService = reviewService;
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getReview(@PathVariable String id) {
+        try {
+            ResponseReviewDto review = reviewService.getReview(id);
+            return ResponseEntity.ok(review);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching review: " + e.getMessage());
+        }
+    }
+
     @PostMapping
-    public ResponseEntity<?> createReview(@Valid @RequestBody Review review, BindingResult result) {
+    public ResponseEntity<?> createReview(@Valid @RequestBody ReviewDto reviewDto, BindingResult result) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            Review createdReview = reviewService.createReview(review);
+            ResponseReviewDto createdReview = reviewService.createReview(reviewDto);
             return ResponseEntity.ok(createdReview);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error creating review: " + e.getMessage());
@@ -32,13 +43,13 @@ public class ReviewController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateReview(@PathVariable String id, @Valid @RequestBody Review review, BindingResult result) {
+    public ResponseEntity<?> updateReview(@PathVariable String id, @Valid @RequestBody ReviewDto reviewDto, BindingResult result) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            Review updatedReview = reviewService.updateReview(review);
+            ResponseReviewDto updatedReview = reviewService.updateReview(id, reviewDto);
             return ResponseEntity.ok(updatedReview);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error updating review: " + e.getMessage());

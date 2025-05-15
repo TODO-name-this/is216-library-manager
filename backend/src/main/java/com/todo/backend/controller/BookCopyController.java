@@ -1,5 +1,7 @@
 package com.todo.backend.controller;
 
+import com.todo.backend.dto.bookcopy.BookCopyDto;
+import com.todo.backend.dto.bookcopy.ResponseBookCopyDto;
 import com.todo.backend.entity.BookCopy;
 import com.todo.backend.service.BookCopyService;
 import jakarta.validation.Valid;
@@ -17,31 +19,27 @@ public class BookCopyController {
         this.bookCopyService = bookCopyService;
     }
 
-    @PostMapping
-    public ResponseEntity<?> createBookCopy(@Valid @RequestBody BookCopy bookCopy, BindingResult result) {
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getBookCopy(@PathVariable String id) {
         try {
-            if (result.hasErrors()) {
-                return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
-            }
-
-            BookCopy createdBookCopy = bookCopyService.createBookCopy(bookCopy);
-            return ResponseEntity.ok(createdBookCopy);
+            BookCopy bookCopy = bookCopyService.getBookCopy(id);
+            return ResponseEntity.ok(bookCopy);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error creating book copy: " + e.getMessage());
+            return ResponseEntity.status(500).body("Error fetching book copy: " + e.getMessage());
         }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateBookCopy(@PathVariable String id, @Valid @RequestBody BookCopy bookCopy, BindingResult result) {
+    @PostMapping
+    public ResponseEntity<?> createBookCopy(@Valid @RequestBody BookCopyDto bookCopyDto, BindingResult result) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            BookCopy updatedBookCopy = bookCopyService.updateBookCopy(bookCopy);
-            return ResponseEntity.ok(updatedBookCopy);
+            ResponseBookCopyDto createdBookCopy = bookCopyService.createBookCopy(bookCopyDto);
+            return ResponseEntity.ok(createdBookCopy);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error updating book copy: " + e.getMessage());
+            return ResponseEntity.status(500).body("Error creating book copy: " + e.getMessage());
         }
     }
 

@@ -1,6 +1,7 @@
 package com.todo.backend.controller;
 
-import com.todo.backend.entity.Reservation;
+import com.todo.backend.dto.reservation.ReservationDto;
+import com.todo.backend.dto.reservation.ResponseReservationDto;
 import com.todo.backend.service.ReservationService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -17,14 +18,24 @@ public class ReservationController {
         this.reservationService = reservationService;
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getReservation(@PathVariable String id) {
+        try {
+            ResponseReservationDto reservation = reservationService.getReservation(id);
+            return ResponseEntity.ok(reservation);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching reservation: " + e.getMessage());
+        }
+    }
+
     @PostMapping
-    public ResponseEntity<?> createReservation(@Valid @RequestBody Reservation reservation, BindingResult result) {
+    public ResponseEntity<?> createReservation(@Valid @RequestBody ReservationDto reservationDto, BindingResult result) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            Reservation createdReservation = reservationService.createReservation(reservation);
+            ResponseReservationDto createdReservation = reservationService.createReservation(reservationDto);
             return ResponseEntity.ok(createdReservation);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error creating reservation: " + e.getMessage());
@@ -32,13 +43,13 @@ public class ReservationController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateReservation(@PathVariable String id, @Valid @RequestBody Reservation reservation, BindingResult result) {
+    public ResponseEntity<?> updateReservation(@PathVariable String id, @Valid @RequestBody ReservationDto reservationDto, BindingResult result) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            Reservation updatedReservation = reservationService.updateReservation(reservation);
+            ResponseReservationDto updatedReservation = reservationService.updateReservation(id, reservationDto);
             return ResponseEntity.ok(updatedReservation);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error updating reservation: " + e.getMessage());

@@ -2,7 +2,6 @@ package com.todo.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.util.List;
@@ -12,12 +11,11 @@ import java.util.List;
 @Data
 public class Category {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "ID")
-    @NotBlank(message = "Category ID is required")
     private String id;
 
     @Column(name = "NAME")
-    @NotBlank(message = "Category name is required")
     private String name;
 
     @Column(name = "DESCRIPTION")

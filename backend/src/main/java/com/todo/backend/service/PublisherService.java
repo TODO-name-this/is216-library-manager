@@ -1,7 +1,10 @@
 package com.todo.backend.service;
 
 import com.todo.backend.dao.PublisherRepository;
+import com.todo.backend.dto.publisher.PublisherDto;
+import com.todo.backend.dto.publisher.ResponsePublisherDto;
 import com.todo.backend.entity.Publisher;
+import com.todo.backend.mapper.PublisherMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -9,25 +12,37 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class PublisherService {
     private final PublisherRepository publisherRepository;
+    private final PublisherMapper publisherMapper;
 
-    public PublisherService(PublisherRepository publisherRepository) {
+    public PublisherService(PublisherRepository publisherRepository, PublisherMapper publisherMapper) {
         this.publisherRepository = publisherRepository;
+        this.publisherMapper = publisherMapper;
     }
 
-    public Publisher createPublisher(Publisher publisher) {
-        if (publisherRepository.existsById(publisher.getId())) {
-            throw new IllegalArgumentException("Publisher with this ID already exists");
-        }
+    public ResponsePublisherDto getPublisher(String id) {
+        Publisher publisher = publisherRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Publisher with this ID does not exist"));
 
-        return publisherRepository.save(publisher);
+        return publisherMapper.toResponseDto(publisher);
     }
 
-    public Publisher updatePublisher(Publisher publisher) {
-        if (!publisherRepository.existsById(publisher.getId())) {
-            throw new IllegalArgumentException("Publisher with this ID does not exist");
-        }
+    public ResponsePublisherDto createPublisher(PublisherDto publisherDto) {
+        Publisher publisher = publisherMapper.toEntity(publisherDto);
 
-        return publisherRepository.save(publisher);
+        publisherRepository.save(publisher);
+
+        return publisherMapper.toResponseDto(publisher);
+    }
+
+    public ResponsePublisherDto updatePublisher(String id, PublisherDto publisherDto) {
+        Publisher existingPublisher = publisherRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Publisher with this ID does not exist"));
+
+        publisherMapper.updateEntityFromDto(publisherDto, existingPublisher);
+
+        publisherRepository.save(existingPublisher);
+
+        return publisherMapper.toResponseDto(existingPublisher);
     }
 
     public void deletePublisher(String id) {

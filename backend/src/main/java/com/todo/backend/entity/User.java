@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Entity
@@ -13,26 +14,22 @@ import java.util.List;
 @Data
 public class User {
     @Id
-    @Column(name = "ID")
-    @NotBlank(message = "User ID is required")
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "ID", updatable = false, nullable = false, unique = true)
     private String id;
 
-    @NotBlank(message = "CCCD is required")
     @Column(name = "CCCD")
     private String cccd;
 
     @Column(name = "AVATAR_URL")
     private String avatarUrl;
 
-    @NotBlank(message = "Name is required")
     @Column(name = "NAME")
     private String name;
 
-    @NotBlank(message = "Birthday is required")
     @Column(name = "DOB")
-    private String dob;
+    private LocalDate dob;
 
-    @NotBlank(message = "Email is required")
     @Column(name = "EMAIL")
     private String email;
 
@@ -43,6 +40,9 @@ public class User {
     @NotBlank(message = "Role is required")
     @Column(name = "ROLE")
     private String role;
+
+    @Column(name = "BALANCE")
+    private int balance;
 
     // Relationship with Review
     @JsonIgnore
