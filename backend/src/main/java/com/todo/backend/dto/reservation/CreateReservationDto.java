@@ -8,17 +8,10 @@ import java.time.LocalDate;
 
 @Data
 @Builder
-public class ReservationDto {
-    @NotNull(message = "Reservation date is required")
-    @FutureOrPresent
-    private LocalDate reservationDate;
-
+public class CreateReservationDto {
     @NotNull(message = "Expiration date is required")
-    @Future
+    @Future(message = "Expiration date must be in the future")
     private LocalDate expirationDate;
-
-    @NotBlank(message = "Status is required")
-    private String status;
 
     @Min(value = 0, message = "Deposit must be positive or zero")
     private int deposit;

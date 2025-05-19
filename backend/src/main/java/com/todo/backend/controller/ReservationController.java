@@ -1,7 +1,9 @@
 package com.todo.backend.controller;
 
-import com.todo.backend.dto.reservation.ReservationDto;
+import com.todo.backend.dto.reservation.CreateReservationDto;
+import com.todo.backend.dto.reservation.PartialUpdateReservationDto;
 import com.todo.backend.dto.reservation.ResponseReservationDto;
+import com.todo.backend.dto.reservation.UpdateReservationDto;
 import com.todo.backend.service.ReservationService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -29,13 +31,13 @@ public class ReservationController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createReservation(@Valid @RequestBody ReservationDto reservationDto, BindingResult result) {
+    public ResponseEntity<?> createReservation(@Valid @RequestBody CreateReservationDto createReservationDto, BindingResult result) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            ResponseReservationDto createdReservation = reservationService.createReservation(reservationDto);
+            ResponseReservationDto createdReservation = reservationService.createReservation(createReservationDto);
             return ResponseEntity.ok(createdReservation);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error creating reservation: " + e.getMessage());
@@ -43,16 +45,30 @@ public class ReservationController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateReservation(@PathVariable String id, @Valid @RequestBody ReservationDto reservationDto, BindingResult result) {
+    public ResponseEntity<?> updateReservation(@PathVariable String id, @Valid @RequestBody UpdateReservationDto updateReservationDto, BindingResult result) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            ResponseReservationDto updatedReservation = reservationService.updateReservation(id, reservationDto);
+            ResponseReservationDto updatedReservation = reservationService.updateReservation(id, updateReservationDto);
             return ResponseEntity.ok(updatedReservation);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error updating reservation: " + e.getMessage());
+        }
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> partialUpdateReservation(@PathVariable String id, @Valid @RequestBody PartialUpdateReservationDto partialUpdateReservationDto, BindingResult result) {
+        try {
+            if (result.hasErrors()) {
+                return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
+            }
+
+            ResponseReservationDto updatedReservation = reservationService.partialUpdateReservation(id, partialUpdateReservationDto);
+            return ResponseEntity.ok(updatedReservation);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error partially updating reservation: " + e.getMessage());
         }
     }
 
