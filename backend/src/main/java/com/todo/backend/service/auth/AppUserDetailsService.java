@@ -22,10 +22,10 @@ public class AppUserDetailsService implements UserDetailsService {
 
     // use id as username
     @Override
-    public UserDetails loadUserByUsername(String id) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String cccd) throws UsernameNotFoundException {
         // yes you cant import User entity. that's why it's var. It has to be var. Why?
-        var userEntity = userRepository.findById(id)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with cccd: " + id));
+        var userEntity = userRepository.findByCccd(cccd)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with cccd: " + cccd));
 
         var authorities = List.of(
                 new SimpleGrantedAuthority(userEntity.getRole().name())
