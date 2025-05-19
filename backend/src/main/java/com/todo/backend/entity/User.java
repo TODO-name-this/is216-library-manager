@@ -2,6 +2,7 @@ package com.todo.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.todo.backend.entity.identity.UserRole;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -13,12 +14,13 @@ import java.util.List;
 @Data
 public class User {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "ID")
     @NotBlank(message = "User ID is required")
     private String id;
 
     @NotBlank(message = "CCCD is required")
-    @Column(name = "CCCD")
+    @Column(name = "CCCD", unique = true)
     private String cccd;
 
     @Column(name = "AVATAR_URL")
@@ -33,16 +35,17 @@ public class User {
     private String dob;
 
     @NotBlank(message = "Email is required")
-    @Column(name = "EMAIL")
+    @Column(name = "EMAIL", unique = true)
     private String email;
 
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) // only allow deserialization
     @Column(name = "PASSWORD")
     private String password;
 
     @NotBlank(message = "Role is required")
     @Column(name = "ROLE")
-    private String role;
+    @Enumerated(EnumType.STRING)
+    private UserRole role;
 
     // Relationship with Review
     @JsonIgnore
