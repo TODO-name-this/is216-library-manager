@@ -24,7 +24,7 @@ CREATE TABLE `AUTHOR` (
   `ID` varchar(36) NOT NULL,
   `AVATAR_URL` text DEFAULT NULL,
   `NAME` varchar(255) NOT NULL,
-  `BIRTHDAY` varchar(50) DEFAULT NULL,
+  `BIRTHDAY` date DEFAULT NULL,
   `BIOGRAPHY` text DEFAULT NULL,
   PRIMARY KEY (`ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -49,12 +49,13 @@ CREATE TABLE `PUBLISHER` (
 CREATE TABLE `USER` (
   `ID` varchar(36) NOT NULL,
   `CCCD` char(15) NOT NULL,
-  `DOB` varchar(50) NOT NULL,
+  `DOB` date NOT NULL,
   `AVATAR_URL` text DEFAULT NULL,
   `NAME` varchar(255) NOT NULL,
   `EMAIL` varchar(255) NOT NULL,
   `PASSWORD` varchar(255),
   `ROLE` varchar(50) DEFAULT 'USER',
+  `BALANCE` bigint NOT NULL DEFAULT 0,
   PRIMARY KEY (`ID`),
   UNIQUE KEY `EMAIL_UNIQUE` (`EMAIL`),
   UNIQUE KEY `CCCD_UNIQUE` (`CCCD`)
@@ -65,7 +66,8 @@ CREATE TABLE `BOOK_TITLE` (
   `IMAGE_URL` text DEFAULT NULL,
   `TITLE` varchar(255) NOT NULL,
   `ISBN` varchar(50) DEFAULT NULL,
-  `PUBLISHED_DATE` varchar(50) DEFAULT NULL,
+  `CAN_BORROW` BOOLEAN NOT NULL DEFAULT TRUE,
+  `PUBLISHED_DATE` date DEFAULT NULL,
   `PUBLISHER_ID` varchar(36) DEFAULT NULL,
   UNIQUE KEY `UK_ISBN` (`ISBN`),
   PRIMARY KEY (`ID`),
@@ -107,7 +109,7 @@ CREATE TABLE `REVIEW` (
   `BOOK_TITLE_ID` varchar(36) NOT NULL,
   `STAR` int(11) NOT NULL,
   `COMMENT` text DEFAULT NULL,
-  `DATE` varchar(50) NOT NULL ,
+  `DATE` date NOT NULL ,
   PRIMARY KEY (`ID`),
   UNIQUE KEY `UK_USER_BOOK_TITLE` (`USER_ID`, `BOOK_TITLE_ID`),
   KEY `FK_REVIEW_BOOK_TITLE` (`BOOK_TITLE_ID`),
@@ -118,8 +120,8 @@ CREATE TABLE `REVIEW` (
 CREATE TABLE `TRANSACTION` (
   `ID` varchar(36) NOT NULL,
   `USER_ID` varchar(36) NOT NULL,
-  `BORROW_DATE` varchar(50) NOT NULL,
-  `DUE_DATE` varchar(50) NOT NULL,
+  `BORROW_DATE` date NOT NULL,
+  `DUE_DATE` date NOT NULL,
   PRIMARY KEY (`ID`),
   KEY `FK_TRANSACTION_USER` (`USER_ID`),
   CONSTRAINT `FK_TRANSACTION_USER` FOREIGN KEY (`USER_ID`) REFERENCES `USER` (`ID`)
@@ -128,7 +130,7 @@ CREATE TABLE `TRANSACTION` (
 CREATE TABLE `TRANSACTION_DETAIL` (
   `TRANSACTION_ID` varchar(36) NOT NULL,
   `BOOK_COPY_ID` varchar(36) NOT NULL,
-  `RETURNED_DATE` varchar(50) DEFAULT NULL,
+  `RETURNED_DATE` date DEFAULT NULL,
   `PENALTY_FEE` bigint NOT NULL DEFAULT 0,
   PRIMARY KEY (`TRANSACTION_ID`, `BOOK_COPY_ID`),
   KEY `FK_TRANSACTION_DETAIL_BOOK_COPY` (`BOOK_COPY_ID`),
@@ -139,17 +141,20 @@ CREATE TABLE `TRANSACTION_DETAIL` (
 
 CREATE TABLE `RESERVATION` (
   `ID` varchar(36) NOT NULL,
-  `QUANTITY` bigint NOT NULL DEFAULT 0,
   `USER_ID` varchar(36) NOT NULL,
   `BOOK_TITLE_ID` varchar(36) NOT NULL,
-  `RESERVATION_DATE` varchar(50) NOT NULL,
-  `EXPIRATION_DATE` varchar(50) NOT NULL,
+  `BOOK_COPY_ID` varchar(36) NOT NULL,
+  `RESERVATION_DATE` date NOT NULL,
+  `EXPIRATION_DATE` date NOT NULL,
   `STATUS` varchar(50) NOT NULL DEFAULT 'PENDING',
+  `DEPOSIT` bigint NOT NULL DEFAULT 0,
   PRIMARY KEY (`ID`),
   KEY `FK_RESERVATION_USER` (`USER_ID`),
   KEY `FK_RESERVATION_BOOK_TITLE` (`BOOK_TITLE_ID`),
+  KEY `FK_RESERVATION_BOOK_COPY` (`BOOK_COPY_ID`),
   CONSTRAINT `FK_RESERVATION_USER` FOREIGN KEY (`USER_ID`) REFERENCES `USER` (`ID`),
-  CONSTRAINT `FK_RESERVATION_BOOK_TITLE` FOREIGN KEY (`BOOK_TITLE_ID`) REFERENCES `BOOK_TITLE` (`ID`)
+  CONSTRAINT `FK_RESERVATION_BOOK_TITLE` FOREIGN KEY (`BOOK_TITLE_ID`) REFERENCES `BOOK_TITLE` (`ID`),
+  CONSTRAINT `FK_RESERVATION_BOOK_COPY` FOREIGN KEY (`BOOK_COPY_ID`) REFERENCES `BOOK_COPY` (`ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Insert sample data
@@ -206,90 +211,90 @@ INSERT INTO `AUTHOR` (`ID`, `NAME`, `BIOGRAPHY`) VALUES
 
 -- 4. Insert BookTitles
 INSERT INTO `BOOK_TITLE` (`ID`, `IMAGE_URL`, `TITLE`, `ISBN`, `PUBLISHED_DATE`, `PUBLISHER_ID`) VALUES
-('b1', 'https://www.nxbctqg.org.vn/img_data/images/709508658395_169686323_466117254736983_3540351537507976746_n.jpg', 'Pháp luật đại cương', '978-604-57-5825-8', '2020', 'p1'),
-('b2', 'https://nxbctqg.org.vn/img_data/images/773528504979_mllkc.jpg', 'Giáo trình triết học Mác - Lê Nin', '978-604-57-5826-5', '2021', 'p1'),
-('b3', 'https://nxbctqg.org.vn/img_data/images/316029535454_KHONG-CHUYEN.jpg', 'Tư tưởng Hồ Chí Minh', '978-604-57-5827-2', '2021', 'p1'),
-('b4', 'https://nxbctqg.org.vn/img_data/images/036272640018_b1.jpg', 'Kinh tế chính trị Mác Lê Nin', '978-604-57-5828-9', '2021', 'p1'),
-('b5', 'https://nxbctqg.org.vn/img_data/images/326523824123_b1.jpg', 'Chủ nghĩa xã hội khoa học', '978-604-57-5829-6', '2021', 'p1'),
-('b6', 'https://m.media-amazon.com/images/I/41-sN-mzwKL.jpg', 'Clean Code', '978-0132350884', '2008', 'p4'),
-('b7', 'https://m.media-amazon.com/images/I/51O-cX8IcDL.jpg', 'You Don\'t Know JS: Scope & Closures', '978-1449335588', '2014', 'p2'),
-('b8', 'https://m.media-amazon.com/images/I/51k5cA3Yv3L.jpg', 'Design Patterns', '978-0201633610', '1994', 'p4'),
-('b9', 'https://m.media-amazon.com/images/I/51gdDmGRc1L.jpg', 'JavaScript: The Good Parts', '978-0596517748', '2008', 'p2'),
-('b10', 'https://m.media-amazon.com/images/I/41SH-SvWPxL.jpg', 'Don\'t Make Me Think', '978-0321965516', '2014', 'p5'),
-('b11', 'https://m.media-amazon.com/images/I/41as+WafrFL.jpg', 'The Pragmatic Programmer', '978-0201616224', '1999', 'p4'),
-('b12', 'https://m.media-amazon.com/images/I/51kLjsos7eL.jpg', 'Refactoring', '978-0134757599', '2018', 'p4'),
-('b13', 'https://m.media-amazon.com/images/I/91asIC1fRwL.jpg', 'Eloquent JavaScript', '978-1593279509', '2018', 'p5'),
-('b14', 'https://m.media-amazon.com/images/I/41+eA4F7GPL.jpg', 'HTML and CSS: Design and Build Websites', '978-1118008188', '2011', 'p6'),
-('b15', 'https://m.media-amazon.com/images/I/51JpH5yPffL.jpg', 'Learning React', '978-1492051725', '2020', 'p2'),
-('b16', 'https://m.media-amazon.com/images/I/61u6oaU6oFL.jpg', 'Grokking Algorithms', '978-1617292231', '2016', 'p3'),
-('b17', 'https://m.media-amazon.com/images/I/41D5rfQnQBL.jpg', 'Designing Data-Intensive Applications', '978-1449373320', '2017', 'p2'),
-('b18', 'https://m.media-amazon.com/images/I/71GucMfsX2L.jpg', 'UX for Beginners', '978-1491912683', '2015', 'p2'),
-('b19', 'https://m.media-amazon.com/images/I/81vjDV8Z2hL.jpg', 'Head First Design Patterns', '978-0596007126', '2004', 'p2'),
-('b20', 'https://m.media-amazon.com/images/I/51cUVaBWZ0L.jpg', 'Fluent Python', '978-1491946008', '2015', 'p2'),
-('b21', 'https://m.media-amazon.com/images/I/41cKAY88zSL.jpg', 'The UX Book', '978-0123852410', '2012', 'p4'),
-('b22', 'https://m.media-amazon.com/images/I/51Fg0sbL6BL.jpg', 'Spring in Action', '978-1617294945','2018', 'p3'),
-('b23', 'https://m.media-amazon.com/images/I/51fgdlGZlnL.jpg', 'Kotlin in Action', '978-1617293290', '2017', 'p3'),
-('b24', 'https://m.media-amazon.com/images/I/41x6Ofq71dL.jpg', 'CSS Secrets', '978-1449372637', '2015', 'p2'),
-('b25', 'https://m.media-amazon.com/images/I/51Fkt1hdOUL.jpg', 'Python Crash Course', '978-1593276034', '2015', 'p5');
+('b1', 'https://www.nxbctqg.org.vn/img_data/images/709508658395_169686323_466117254736983_3540351537507976746_n.jpg', 'Pháp luật đại cương', '978-604-57-5825-8', '2020-01-01', 'p1'),
+('b2', 'https://nxbctqg.org.vn/img_data/images/773528504979_mllkc.jpg', 'Giáo trình triết học Mác - Lê Nin', '978-604-57-5826-5', '2020-01-01', 'p1'),
+('b3', 'https://nxbctqg.org.vn/img_data/images/316029535454_KHONG-CHUYEN.jpg', 'Tư tưởng Hồ Chí Minh', '978-604-57-5827-2', '1999-09-12', 'p1'),
+('b4', 'https://nxbctqg.org.vn/img_data/images/036272640018_b1.jpg', 'Kinh tế chính trị Mác Lê Nin', '978-604-57-5828-9', '1989-02-01', 'p1'),
+('b5', 'https://nxbctqg.org.vn/img_data/images/326523824123_b1.jpg', 'Chủ nghĩa xã hội khoa học', '978-604-57-5829-6', '2005-02-22', 'p1'),
+('b6', 'https://m.media-amazon.com/images/I/41-sN-mzwKL.jpg', 'Clean Code', '978-0132350884', '1999-01-10', 'p4'),
+('b7', 'https://m.media-amazon.com/images/I/51O-cX8IcDL.jpg', 'You Don\'t Know JS: Scope & Closures', '978-1449335588', '2020-12-01', 'p2'),
+('b8', 'https://m.media-amazon.com/images/I/51k5cA3Yv3L.jpg', 'Design Patterns', '978-0201633610', '2022-09-14', 'p4'),
+('b9', 'https://m.media-amazon.com/images/I/51gdDmGRc1L.jpg', 'JavaScript: The Good Parts', '978-0596517748', '1987-05-23', 'p2'),
+('b10', 'https://m.media-amazon.com/images/I/41SH-SvWPxL.jpg', 'Don\'t Make Me Think', '978-0321965516', '2020-01-14', 'p5'),
+('b11', 'https://m.media-amazon.com/images/I/41as+WafrFL.jpg', 'The Pragmatic Programmer', '978-0201616224', '1778-02-03', 'p4'),
+('b12', 'https://m.media-amazon.com/images/I/51kLjsos7eL.jpg', 'Refactoring', '978-0134757599', '2012-08-12', 'p4'),
+('b13', 'https://m.media-amazon.com/images/I/91asIC1fRwL.jpg', 'Eloquent JavaScript', '978-1593279509', '2020-08-05', 'p5'),
+('b14', 'https://m.media-amazon.com/images/I/41+eA4F7GPL.jpg', 'HTML and CSS: Design and Build Websites', '978-1118008188', '2020-07-22', 'p6'),
+('b15', 'https://m.media-amazon.com/images/I/51JpH5yPffL.jpg', 'Learning React', '978-1492051725', '1991-11-11', 'p2'),
+('b16', 'https://m.media-amazon.com/images/I/61u6oaU6oFL.jpg', 'Grokking Algorithms', '978-1617292231', '2023-06-20', 'p3'),
+('b17', 'https://m.media-amazon.com/images/I/41D5rfQnQBL.jpg', 'Designing Data-Intensive Applications', '978-1449373320', '1888-04-01', 'p2'),
+('b18', 'https://m.media-amazon.com/images/I/71GucMfsX2L.jpg', 'UX for Beginners', '978-1491912683', '2020-01-26', 'p2'),
+('b19', 'https://m.media-amazon.com/images/I/81vjDV8Z2hL.jpg', 'Head First Design Patterns', '978-0596007126', '1876-08-09', 'p2'),
+('b20', 'https://m.media-amazon.com/images/I/51cUVaBWZ0L.jpg', 'Fluent Python', '978-1491946008', '1882-12-01', 'p2'),
+('b21', 'https://m.media-amazon.com/images/I/41cKAY88zSL.jpg', 'The UX Book', '978-0123852410', '1881-12-30', 'p4'),
+('b22', 'https://m.media-amazon.com/images/I/51Fg0sbL6BL.jpg', 'Spring in Action', '978-1617294945', '1919-04-05', 'p3'),
+('b23', 'https://m.media-amazon.com/images/I/51fgdlGZlnL.jpg', 'Kotlin in Action', '978-1617293290', '2020-10-06', 'p3'),
+('b24', 'https://m.media-amazon.com/images/I/41x6Ofq71dL.jpg', 'CSS Secrets', '978-1449372637', '1993-01-21', 'p2'),
+('b25', 'https://m.media-amazon.com/images/I/51Fkt1hdOUL.jpg', 'Python Crash Course', '978-1593276034', '1999-01-01', 'p5');
 
 -- 5. Insert Book Copies
 INSERT INTO `BOOK_COPY` (`ID`, `BOOK_TITLE_ID`, `STATUS`) VALUES
-('bc1-1',  'b1',  'AVAILABLE'),
-('bc1-2',  'b1',  'AVAILABLE'),
+('bc1-1',  'b1',  'BORROWED'),
+('bc1-2',  'b1',  'RESERVED'),
 ('bc1-3',  'b1',  'AVAILABLE'),
-('bc2-1',  'b2',  'AVAILABLE'),
-('bc2-2',  'b2',  'AVAILABLE'),
+('bc2-1',  'b2',  'BORROWED'),
+('bc2-2',  'b2',  'RESERVED'),
 ('bc2-3',  'b2',  'AVAILABLE'),
-('bc3-1',  'b3',  'AVAILABLE'),
+('bc3-1',  'b3',  'BORROWED'),
 ('bc3-2',  'b3',  'AVAILABLE'),
 ('bc3-3',  'b3',  'AVAILABLE'),
-('bc4-1',  'b4',  'AVAILABLE'),
+('bc4-1',  'b4',  'BORROWED'),
 ('bc4-2',  'b4',  'AVAILABLE'),
 ('bc4-3',  'b4',  'AVAILABLE'),
-('bc5-1',  'b5',  'AVAILABLE'),
+('bc5-1',  'b5',  'BORROWED'),
 ('bc5-2',  'b5',  'AVAILABLE'),
 ('bc5-3',  'b5',  'AVAILABLE'),
-('bc6-1',  'b6',  'AVAILABLE'),
+('bc6-1',  'b6',  'BORROWED'),
 ('bc6-2',  'b6',  'AVAILABLE'),
 ('bc6-3',  'b6',  'AVAILABLE'),
 ('bc6-4',  'b6',  'AVAILABLE'),
-('bc7-1',  'b7',  'AVAILABLE'),
+('bc7-1',  'b7',  'BORROWED'),
 ('bc7-2',  'b7',  'AVAILABLE'),
 ('bc7-3',  'b7',  'AVAILABLE'),
 ('bc7-4',  'b7',  'AVAILABLE'),
-('bc8-1',  'b8',  'AVAILABLE'),
+('bc8-1',  'b8',  'BORROWED'),
 ('bc8-2',  'b8',  'AVAILABLE'),
 ('bc8-3',  'b8',  'AVAILABLE'),
 ('bc8-4',  'b8',  'AVAILABLE'),
-('bc9-1',  'b9',  'AVAILABLE'),
+('bc9-1',  'b9',  'BORROWED'),
 ('bc9-2',  'b9',  'AVAILABLE'),
 ('bc9-3',  'b9',  'AVAILABLE'),
 ('bc9-4',  'b9',  'AVAILABLE'),
-('bc10-1', 'b10', 'AVAILABLE'),
+('bc10-1', 'b10', 'BORROWED'),
 ('bc10-2', 'b10', 'AVAILABLE'),
 ('bc10-3', 'b10', 'AVAILABLE'),
 ('bc10-4', 'b10', 'AVAILABLE'),
-('bc11-1', 'b11', 'AVAILABLE'),
+('bc11-1', 'b11', 'BORROWED'),
 ('bc11-2', 'b11', 'AVAILABLE'),
 ('bc11-3', 'b11', 'AVAILABLE'),
 ('bc11-4', 'b11', 'AVAILABLE'),
-('bc12-1', 'b12', 'AVAILABLE'),
+('bc12-1', 'b12', 'BORROWED'),
 ('bc12-2', 'b12', 'AVAILABLE'),
 ('bc12-3', 'b12', 'AVAILABLE'),
 ('bc12-4', 'b12', 'AVAILABLE'),
-('bc13-1', 'b13', 'AVAILABLE'),
+('bc13-1', 'b13', 'BORROWED'),
 ('bc13-2', 'b13', 'AVAILABLE'),
 ('bc13-3', 'b13', 'AVAILABLE'),
 ('bc13-4', 'b13', 'AVAILABLE'),
-('bc14-1', 'b14', 'AVAILABLE'),
+('bc14-1', 'b14', 'BORROWED'),
 ('bc14-2', 'b14', 'AVAILABLE'),
 ('bc14-3', 'b14', 'AVAILABLE'),
 ('bc14-4', 'b14', 'AVAILABLE'),
-('bc15-1', 'b15', 'AVAILABLE'),
+('bc15-1', 'b15', 'BORROWED'),
 ('bc15-2', 'b15', 'AVAILABLE'),
 ('bc15-3', 'b15', 'AVAILABLE'),
 ('bc15-4', 'b15', 'AVAILABLE'),
-('bc16-1', 'b16', 'AVAILABLE'),
+('bc16-1', 'b16', 'BORROWED'),
 ('bc16-2', 'b16', 'AVAILABLE'),
 ('bc16-3', 'b16', 'AVAILABLE'),
 ('bc16-4', 'b16', 'AVAILABLE'),
@@ -315,27 +320,27 @@ INSERT INTO `BOOK_COPY` (`ID`, `BOOK_TITLE_ID`, `STATUS`) VALUES
 ('bc20-4', 'b20', 'AVAILABLE'),
 ('bc20-5', 'b20', 'AVAILABLE'),
 ('bc21-1', 'b21', 'AVAILABLE'),
-('bc21-2', 'b21', 'AVAILABLE'),
+('bc21-2', 'b21', 'RESERVED'),
 ('bc21-3', 'b21', 'AVAILABLE'),
 ('bc21-4', 'b21', 'AVAILABLE'),
 ('bc21-5', 'b21', 'AVAILABLE'),
 ('bc22-1', 'b22', 'AVAILABLE'),
-('bc22-2', 'b22', 'AVAILABLE'),
+('bc22-2', 'b22', 'RESERVED'),
 ('bc22-3', 'b22', 'AVAILABLE'),
 ('bc22-4', 'b22', 'AVAILABLE'),
 ('bc22-5', 'b22', 'AVAILABLE'),
 ('bc23-1', 'b23', 'AVAILABLE'),
-('bc23-2', 'b23', 'AVAILABLE'),
+('bc23-2', 'b23', 'RESERVED'),
 ('bc23-3', 'b23', 'AVAILABLE'),
 ('bc23-4', 'b23', 'AVAILABLE'),
 ('bc23-5', 'b23', 'AVAILABLE'),
 ('bc24-1', 'b24', 'AVAILABLE'),
-('bc24-2', 'b24', 'AVAILABLE'),
+('bc24-2', 'b24', 'RESERVED'),
 ('bc24-3', 'b24', 'AVAILABLE'),
 ('bc24-4', 'b24', 'AVAILABLE'),
 ('bc24-5', 'b24', 'AVAILABLE'),
 ('bc25-1', 'b25', 'AVAILABLE'),
-('bc25-2', 'b25', 'AVAILABLE'),
+('bc25-2', 'b25', 'RESERVED'),
 ('bc25-3', 'b25', 'AVAILABLE'),
 ('bc25-4', 'b25', 'AVAILABLE'),
 ('bc25-5', 'b25', 'AVAILABLE');
@@ -441,14 +446,7 @@ INSERT INTO `TRANSACTION` (`ID`, `USER_ID`, `BORROW_DATE`, `DUE_DATE`) VALUES
 ('t5', 'u6', '2023-01-20', '2023-02-03'),
 ('t6', 'u7', '2023-01-25', '2023-02-08'),
 ('t7', 'u2', '2023-02-01', '2023-02-15'),
-('t8', 'u3', '2023-02-05', '2023-02-19'),
-('t9', 'u4', '2023-02-10', '2023-02-24'),
-('t10', 'u5', '2023-02-15', '2023-03-01'),
-('t11', 'u6', '2023-02-20', '2023-03-06'),
-('t12', 'u7', '2023-02-25', '2023-03-11'),
-('t13', 'u2', '2023-03-01', '2023-03-15'),
-('t14', 'u3', '2023-03-05', '2023-03-19'),
-('t15', 'u4', '2023-03-10', '2023-03-24');
+('t8', 'u3', '2023-02-05', '2023-02-19');
 
 -- 11 Insert Transaction Details
 INSERT INTO `TRANSACTION_DETAIL` (`TRANSACTION_ID`, `BOOK_COPY_ID`, `RETURNED_DATE`, `PENALTY_FEE`) VALUES
@@ -470,11 +468,197 @@ INSERT INTO `TRANSACTION_DETAIL` (`TRANSACTION_ID`, `BOOK_COPY_ID`, `RETURNED_DA
 ('t8', 'bc16-1', NULL, 0);
 
 -- 12 Insert Reservations
-INSERT INTO `RESERVATION` (`ID`, `QUANTITY`, `USER_ID`, `BOOK_TITLE_ID`, `RESERVATION_DATE`, `EXPIRATION_DATE`, `STATUS`) VALUES
-('res1', 2, 'u2', 'b21', '2023-03-15', '2023-03-22', 'COMPLETED'),
-('res2', 5, 'u3', 'b22', '2023-03-16', '2023-03-23', 'COMPLETED'),
-('res3', 1, 'u4', 'b23', '2023-03-17', '2023-03-24', 'PENDING'),
-('res4', 5, 'u5', 'b24', '2023-03-18', '2023-03-25', 'PENDING'),
-('res5', 6, 'u6', 'b25', '2023-03-19', '2023-03-26', 'CANCELLED'),
-('res6', 1, 'u7', 'b1', '2023-03-20', '2023-03-27', 'PENDING'),
-('res7', 2, 'u2', 'b2', '2023-03-21', '2023-03-28', 'PENDING');
+INSERT INTO `RESERVATION` (`ID`, `USER_ID`, `BOOK_TITLE_ID`, `BOOK_COPY_ID`, `RESERVATION_DATE`, `EXPIRATION_DATE`, `STATUS`) VALUES
+('res1', 'u2', 'b21', 'bc21-2' ,'2023-03-15', '2023-03-22', 'COMPLETED'),
+('res2', 'u3', 'b22', 'bc22-2','2023-03-16', '2023-03-23', 'COMPLETED'),
+('res3', 'u4', 'b23', 'bc23-2','2023-03-17', '2023-03-24', 'PENDING'),
+('res4', 'u5', 'b24', 'bc24-2','2023-03-18', '2023-03-25', 'PENDING'),
+('res5', 'u6', 'b25', 'bc25-2','2023-03-19', '2023-03-26', 'CANCELLED'),
+('res6', 'u7', 'b1', 'bc1-2','2023-03-20', '2023-03-27', 'PENDING'),
+('res7', 'u2', 'b2', 'bc2-2','2023-03-21', '2023-03-28', 'PENDING');
+
+
+
+
+
+-- ==================================================================
+-- Below is the Quartz initialization script, which is not part of the database schema
+-- You must not change this part
+-- Script: https://github.com/quartz-scheduler/quartz/blob/main/quartz/src/main/resources/org/quartz/impl/jdbcjobstore/tables_mysql_innodb.sql
+-- ==================================================================
+
+DROP TABLE IF EXISTS QRTZ_FIRED_TRIGGERS;
+DROP TABLE IF EXISTS QRTZ_PAUSED_TRIGGER_GRPS;
+DROP TABLE IF EXISTS QRTZ_SCHEDULER_STATE;
+DROP TABLE IF EXISTS QRTZ_LOCKS;
+DROP TABLE IF EXISTS QRTZ_SIMPLE_TRIGGERS;
+DROP TABLE IF EXISTS QRTZ_SIMPROP_TRIGGERS;
+DROP TABLE IF EXISTS QRTZ_CRON_TRIGGERS;
+DROP TABLE IF EXISTS QRTZ_BLOB_TRIGGERS;
+DROP TABLE IF EXISTS QRTZ_TRIGGERS;
+DROP TABLE IF EXISTS QRTZ_JOB_DETAILS;
+DROP TABLE IF EXISTS QRTZ_CALENDARS;
+
+CREATE TABLE QRTZ_JOB_DETAILS(
+                                 SCHED_NAME VARCHAR(120) NOT NULL,
+                                 JOB_NAME VARCHAR(190) NOT NULL,
+                                 JOB_GROUP VARCHAR(190) NOT NULL,
+                                 DESCRIPTION VARCHAR(250) NULL,
+                                 JOB_CLASS_NAME VARCHAR(250) NOT NULL,
+                                 IS_DURABLE VARCHAR(1) NOT NULL,
+                                 IS_NONCONCURRENT VARCHAR(1) NOT NULL,
+                                 IS_UPDATE_DATA VARCHAR(1) NOT NULL,
+                                 REQUESTS_RECOVERY VARCHAR(1) NOT NULL,
+                                 JOB_DATA BLOB NULL,
+                                 PRIMARY KEY (SCHED_NAME,JOB_NAME,JOB_GROUP))
+    ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE QRTZ_TRIGGERS (
+                               SCHED_NAME VARCHAR(120) NOT NULL,
+                               TRIGGER_NAME VARCHAR(190) NOT NULL,
+                               TRIGGER_GROUP VARCHAR(190) NOT NULL,
+                               JOB_NAME VARCHAR(190) NOT NULL,
+                               JOB_GROUP VARCHAR(190) NOT NULL,
+                               DESCRIPTION VARCHAR(250) NULL,
+                               NEXT_FIRE_TIME BIGINT(13) NULL,
+                               PREV_FIRE_TIME BIGINT(13) NULL,
+                               PRIORITY INTEGER NULL,
+                               TRIGGER_STATE VARCHAR(16) NOT NULL,
+                               TRIGGER_TYPE VARCHAR(8) NOT NULL,
+                               START_TIME BIGINT(13) NOT NULL,
+                               END_TIME BIGINT(13) NULL,
+                               CALENDAR_NAME VARCHAR(190) NULL,
+                               MISFIRE_INSTR SMALLINT(2) NULL,
+                               JOB_DATA BLOB NULL,
+                               PRIMARY KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP),
+                               FOREIGN KEY (SCHED_NAME,JOB_NAME,JOB_GROUP)
+                                   REFERENCES QRTZ_JOB_DETAILS(SCHED_NAME,JOB_NAME,JOB_GROUP))
+    ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE QRTZ_SIMPLE_TRIGGERS (
+                                      SCHED_NAME VARCHAR(120) NOT NULL,
+                                      TRIGGER_NAME VARCHAR(190) NOT NULL,
+                                      TRIGGER_GROUP VARCHAR(190) NOT NULL,
+                                      REPEAT_COUNT BIGINT(7) NOT NULL,
+                                      REPEAT_INTERVAL BIGINT(12) NOT NULL,
+                                      TIMES_TRIGGERED BIGINT(10) NOT NULL,
+                                      PRIMARY KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP),
+                                      FOREIGN KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP)
+                                          REFERENCES QRTZ_TRIGGERS(SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP))
+    ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE QRTZ_CRON_TRIGGERS (
+                                    SCHED_NAME VARCHAR(120) NOT NULL,
+                                    TRIGGER_NAME VARCHAR(190) NOT NULL,
+                                    TRIGGER_GROUP VARCHAR(190) NOT NULL,
+                                    CRON_EXPRESSION VARCHAR(120) NOT NULL,
+                                    TIME_ZONE_ID VARCHAR(80),
+                                    PRIMARY KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP),
+                                    FOREIGN KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP)
+                                        REFERENCES QRTZ_TRIGGERS(SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP))
+    ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE QRTZ_SIMPROP_TRIGGERS
+(
+    SCHED_NAME VARCHAR(120) NOT NULL,
+    TRIGGER_NAME VARCHAR(190) NOT NULL,
+    TRIGGER_GROUP VARCHAR(190) NOT NULL,
+    STR_PROP_1 VARCHAR(512) NULL,
+    STR_PROP_2 VARCHAR(512) NULL,
+    STR_PROP_3 VARCHAR(512) NULL,
+    INT_PROP_1 INT NULL,
+    INT_PROP_2 INT NULL,
+    LONG_PROP_1 BIGINT NULL,
+    LONG_PROP_2 BIGINT NULL,
+    DEC_PROP_1 NUMERIC(13,4) NULL,
+    DEC_PROP_2 NUMERIC(13,4) NULL,
+    BOOL_PROP_1 VARCHAR(1) NULL,
+    BOOL_PROP_2 VARCHAR(1) NULL,
+    PRIMARY KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP),
+    FOREIGN KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP)
+        REFERENCES QRTZ_TRIGGERS(SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP))
+    ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE QRTZ_BLOB_TRIGGERS (
+                                    SCHED_NAME VARCHAR(120) NOT NULL,
+                                    TRIGGER_NAME VARCHAR(190) NOT NULL,
+                                    TRIGGER_GROUP VARCHAR(190) NOT NULL,
+                                    BLOB_DATA BLOB NULL,
+                                    PRIMARY KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP),
+                                    INDEX (SCHED_NAME,TRIGGER_NAME, TRIGGER_GROUP),
+                                    FOREIGN KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP)
+                                        REFERENCES QRTZ_TRIGGERS(SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP))
+    ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE QRTZ_CALENDARS (
+                                SCHED_NAME VARCHAR(120) NOT NULL,
+                                CALENDAR_NAME VARCHAR(190) NOT NULL,
+                                CALENDAR BLOB NOT NULL,
+                                PRIMARY KEY (SCHED_NAME,CALENDAR_NAME))
+    ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE QRTZ_PAUSED_TRIGGER_GRPS (
+                                          SCHED_NAME VARCHAR(120) NOT NULL,
+                                          TRIGGER_GROUP VARCHAR(190) NOT NULL,
+                                          PRIMARY KEY (SCHED_NAME,TRIGGER_GROUP))
+    ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE QRTZ_FIRED_TRIGGERS (
+                                     SCHED_NAME VARCHAR(120) NOT NULL,
+                                     ENTRY_ID VARCHAR(95) NOT NULL,
+                                     TRIGGER_NAME VARCHAR(190) NOT NULL,
+                                     TRIGGER_GROUP VARCHAR(190) NOT NULL,
+                                     INSTANCE_NAME VARCHAR(190) NOT NULL,
+                                     FIRED_TIME BIGINT(13) NOT NULL,
+                                     SCHED_TIME BIGINT(13) NOT NULL,
+                                     PRIORITY INTEGER NOT NULL,
+                                     STATE VARCHAR(16) NOT NULL,
+                                     JOB_NAME VARCHAR(190) NULL,
+                                     JOB_GROUP VARCHAR(190) NULL,
+                                     IS_NONCONCURRENT VARCHAR(1) NULL,
+                                     REQUESTS_RECOVERY VARCHAR(1) NULL,
+                                     PRIMARY KEY (SCHED_NAME,ENTRY_ID))
+    ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE QRTZ_SCHEDULER_STATE (
+                                      SCHED_NAME VARCHAR(120) NOT NULL,
+                                      INSTANCE_NAME VARCHAR(190) NOT NULL,
+                                      LAST_CHECKIN_TIME BIGINT(13) NOT NULL,
+                                      CHECKIN_INTERVAL BIGINT(13) NOT NULL,
+                                      PRIMARY KEY (SCHED_NAME,INSTANCE_NAME))
+    ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE QRTZ_LOCKS (
+                            SCHED_NAME VARCHAR(120) NOT NULL,
+                            LOCK_NAME VARCHAR(40) NOT NULL,
+                            PRIMARY KEY (SCHED_NAME,LOCK_NAME))
+    ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE INDEX IDX_QRTZ_J_REQ_RECOVERY ON QRTZ_JOB_DETAILS(SCHED_NAME,REQUESTS_RECOVERY);
+CREATE INDEX IDX_QRTZ_J_GRP ON QRTZ_JOB_DETAILS(SCHED_NAME,JOB_GROUP);
+
+CREATE INDEX IDX_QRTZ_T_J ON QRTZ_TRIGGERS(SCHED_NAME,JOB_NAME,JOB_GROUP);
+CREATE INDEX IDX_QRTZ_T_JG ON QRTZ_TRIGGERS(SCHED_NAME,JOB_GROUP);
+CREATE INDEX IDX_QRTZ_T_C ON QRTZ_TRIGGERS(SCHED_NAME,CALENDAR_NAME);
+CREATE INDEX IDX_QRTZ_T_G ON QRTZ_TRIGGERS(SCHED_NAME,TRIGGER_GROUP);
+CREATE INDEX IDX_QRTZ_T_STATE ON QRTZ_TRIGGERS(SCHED_NAME,TRIGGER_STATE);
+CREATE INDEX IDX_QRTZ_T_N_STATE ON QRTZ_TRIGGERS(SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP,TRIGGER_STATE);
+CREATE INDEX IDX_QRTZ_T_N_G_STATE ON QRTZ_TRIGGERS(SCHED_NAME,TRIGGER_GROUP,TRIGGER_STATE);
+CREATE INDEX IDX_QRTZ_T_NEXT_FIRE_TIME ON QRTZ_TRIGGERS(SCHED_NAME,NEXT_FIRE_TIME);
+CREATE INDEX IDX_QRTZ_T_NFT_ST ON QRTZ_TRIGGERS(SCHED_NAME,TRIGGER_STATE,NEXT_FIRE_TIME);
+CREATE INDEX IDX_QRTZ_T_NFT_MISFIRE ON QRTZ_TRIGGERS(SCHED_NAME,MISFIRE_INSTR,NEXT_FIRE_TIME);
+CREATE INDEX IDX_QRTZ_T_NFT_ST_MISFIRE ON QRTZ_TRIGGERS(SCHED_NAME,MISFIRE_INSTR,NEXT_FIRE_TIME,TRIGGER_STATE);
+CREATE INDEX IDX_QRTZ_T_NFT_ST_MISFIRE_GRP ON QRTZ_TRIGGERS(SCHED_NAME,MISFIRE_INSTR,NEXT_FIRE_TIME,TRIGGER_GROUP,TRIGGER_STATE);
+
+CREATE INDEX IDX_QRTZ_FT_TRIG_INST_NAME ON QRTZ_FIRED_TRIGGERS(SCHED_NAME,INSTANCE_NAME);
+CREATE INDEX IDX_QRTZ_FT_INST_JOB_REQ_RCVRY ON QRTZ_FIRED_TRIGGERS(SCHED_NAME,INSTANCE_NAME,REQUESTS_RECOVERY);
+CREATE INDEX IDX_QRTZ_FT_J_G ON QRTZ_FIRED_TRIGGERS(SCHED_NAME,JOB_NAME,JOB_GROUP);
+CREATE INDEX IDX_QRTZ_FT_JG ON QRTZ_FIRED_TRIGGERS(SCHED_NAME,JOB_GROUP);
+CREATE INDEX IDX_QRTZ_FT_T_G ON QRTZ_FIRED_TRIGGERS(SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP);
+CREATE INDEX IDX_QRTZ_FT_TG ON QRTZ_FIRED_TRIGGERS(SCHED_NAME,TRIGGER_GROUP);
+
+commit;
+
+-- ==================================================================
+-- End of the Quartz initialization script
+-- ==================================================================

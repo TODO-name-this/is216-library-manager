@@ -1,7 +1,10 @@
 package com.todo.backend.service;
 
 import com.todo.backend.dao.CategoryRepository;
+import com.todo.backend.dto.category.CategoryDto;
+import com.todo.backend.dto.category.ResponseCategoryDto;
 import com.todo.backend.entity.Category;
+import com.todo.backend.mapper.CategoryMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -9,25 +12,45 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class CategoryService {
     private final CategoryRepository categoryRepository;
+    private final CategoryMapper categoryMapper;
 
-    public CategoryService(CategoryRepository categoryRepository) {
+    public CategoryService(CategoryRepository categoryRepository, CategoryMapper categoryMapper) {
         this.categoryRepository = categoryRepository;
+        this.categoryMapper = categoryMapper;
     }
 
-    public Category createCategory(Category category) {
-        if (categoryRepository.existsById(category.getId())) {
-            throw new RuntimeException("Category ID already exists");
-        }
+    public ResponseCategoryDto getCategory(String id) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Category ID does not exist"));
 
-        return categoryRepository.save(category);
+        return categoryMapper.toResponseDto(category);
     }
 
-    public Category updateCategory(Category category) {
-        if (!categoryRepository.existsById(category.getId())) {
-            throw new RuntimeException("Category ID does not exist");
+    public ResponseCategoryDto createCategory(CategoryDto categoryDto) {
+        Category category = categoryMapper.toEntity(categoryDto);
+
+        if (categoryRepository.existsByName(category.getName())) {
+            throw new IllegalArgumentException("Category name already exists");
         }
 
-        return categoryRepository.save(category);
+        categoryRepository.save(category);
+
+        return categoryMapper.toResponseDto(category);
+    }
+
+    public ResponseCategoryDto updateCategory(String id, CategoryDto categoryDto) {
+        Category existingCategory = categoryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Category ID does not exist"));
+
+        if (categoryRepository.existsByNameAndIdNot(categoryDto.getName(), id)) {
+            throw new IllegalArgumentException("Category name already exists");
+        }
+
+        categoryMapper.updateCategoryFromDto(categoryDto, existingCategory);
+
+        categoryRepository.save(existingCategory);
+
+        return categoryMapper.toResponseDto(existingCategory);
     }
 
     public void deleteCategory(String id) {

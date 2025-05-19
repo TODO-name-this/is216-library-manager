@@ -14,4 +14,6 @@ public interface BookCopyRepository extends JpaRepository<BookCopy, String> {
 
     @Query("SELECT b FROM BookCopy bc JOIN bc.bookTitleId b WHERE bc.bookTitleId = :bookTitleId AND bc.status = :status")
     Page<BookCopy> findByBookTitleIdAndStatus(@RequestParam("bookTitleId") String bookTitleId, @RequestParam("status") String status, Pageable pageable);
+
+    BookCopy findFirstByBookTitleIdAndStatus(String bookTitleId, String status);
 }

@@ -1,5 +1,7 @@
 package com.todo.backend.controller;
 
+import com.todo.backend.dto.user.ResponseUserDto;
+import com.todo.backend.dto.user.UserDto;
 import com.todo.backend.entity.User;
 import com.todo.backend.service.UserService;
 import jakarta.validation.Valid;
@@ -17,14 +19,24 @@ public class UserController {
         this.userService = userService;
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getUser(@PathVariable String id) {
+        try {
+            ResponseUserDto user = userService.getUser(id);
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching user: " + e.getMessage());
+        }
+    }
+
     @PostMapping
-    public ResponseEntity<?> createUser(@Valid @RequestBody User user, BindingResult result) {
+    public ResponseEntity<?> createUser(@Valid @RequestBody UserDto userDto, BindingResult result) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            User createdUser = userService.createUser(user);
+            ResponseUserDto createdUser = userService.createUser(userDto);
             return ResponseEntity.ok(createdUser);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error creating user: " + e.getMessage());
@@ -32,13 +44,13 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable String id, @Valid @RequestBody User user, BindingResult result) {
+    public ResponseEntity<?> updateUser(@PathVariable String id, @Valid @RequestBody UserDto userDto, BindingResult result) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            User updatedUser = userService.updateUser(user);
+            ResponseUserDto updatedUser = userService.updateUser(id, userDto);
             return ResponseEntity.ok(updatedUser);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error updating user: " + e.getMessage());
@@ -46,12 +58,8 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable String id, BindingResult result) {
+    public ResponseEntity<?> deleteUser(@PathVariable String id) {
         try {
-            if (result.hasErrors()) {
-                return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
-            }
-
             userService.deleteUser(id);
             return ResponseEntity.ok("User deleted successfully");
         } catch (Exception e) {

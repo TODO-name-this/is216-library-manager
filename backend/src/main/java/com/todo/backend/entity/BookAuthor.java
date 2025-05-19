@@ -3,7 +3,6 @@ package com.todo.backend.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.todo.backend.entity.compositekey.BookAuthorPrimaryKey;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Entity
@@ -13,12 +12,10 @@ import lombok.Data;
 public class BookAuthor {
     @Id
     @Column(name = "BOOK_TITLE_ID")
-    @NotNull
     private String bookTitleId;
 
     @Id
     @Column(name = "AUTHOR_ID")
-    @NotNull
     private String authorId;
 
     // Relationship with Author
