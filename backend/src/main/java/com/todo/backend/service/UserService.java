@@ -5,6 +5,7 @@ import com.todo.backend.dto.user.ResponseUserDto;
 import com.todo.backend.dto.user.UserDto;
 import com.todo.backend.entity.Transaction;
 import com.todo.backend.entity.User;
+import com.todo.backend.entity.identity.UserRole;
 import com.todo.backend.mapper.UserMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
@@ -55,7 +56,7 @@ public class UserService {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User with this ID does not exist"));
 
-        if (existingUser.getRole().equals("ADMIN")) {
+        if (existingUser.getRole() == UserRole.ADMIN) {
             throw new IllegalArgumentException("Cannot delete admin user");
         }
 

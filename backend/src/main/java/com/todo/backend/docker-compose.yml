@@ -1,9 +1,9 @@
-version: '3'
-
 services:
   mysql:
-    image: 'mysql:8.0'
+    container_name: library-db
+    image: 'mysql:latest'
     restart: always
+    user: "999:999" # Use the UID and GID of the mysql user
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: nextjslibrarydatabase
