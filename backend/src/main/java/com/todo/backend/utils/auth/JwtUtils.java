@@ -3,9 +3,11 @@ package com.todo.backend.utils.auth;
 import com.todo.backend.entity.identity.UserRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -20,8 +22,8 @@ public class JwtUtils {
     private String SECRET;
 
     public String generateAccessToken(String userId, UserRole role) {
-        // 2 hours in ms
-        int ttl = 2 * 60 * 60 * 1000;
+        // 4 hours in ms
+        int ttl = 4 * 60 * 60 * 1000;
         return Jwts.builder()
                 .subject(userId)
                 // with role claim
@@ -29,7 +31,7 @@ public class JwtUtils {
                 .claim("type", "access")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + ttl))
-                .signWith(getSecretKey())
+                .signWith(_secretKey)
                 .compact();
     }
 
@@ -41,7 +43,7 @@ public class JwtUtils {
                 .claim("type", "refresh")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + ttl))
-                .signWith(getSecretKey())
+                .signWith(_secretKey)
                 .compact();
     }
 
@@ -54,19 +56,17 @@ public class JwtUtils {
         return new JwtUserInfo(userId, userRole);
     }
 
-    public String getUserIdRefreshToken(String token) throws JwtException {
+    // why such long name? java tradition.
+    public String validateAndExtractIdRefreshToken(String token) throws JwtException {
         return extractRefreshClaim(token, Claims::getSubject);
     }
 
-    // dont use this variable, use the getter
     private SecretKey _secretKey = null;
-    private SecretKey getSecretKey() {
-        // cache the key
-        if (_secretKey == null) {
-            byte[] keyBytes = Decoders.BASE64.decode(SECRET);
-            _secretKey = Keys.hmacShaKeyFor(keyBytes);
-        }
-        return _secretKey;
+    // cache the key
+    @PostConstruct
+    private void initSecretKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(SECRET);
+        _secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
     private <T> T extractAccessClaim(String token, Function<Claims, T> claimsResolver) {
@@ -74,10 +74,7 @@ public class JwtUtils {
         return claimsResolver.apply(claims);
     }
     private Claims extractAccessClaims(String token) {
-        return Jwts.parser()
-                .require("type", "access")
-                .verifyWith(getSecretKey())
-                .build()
+        return _accessParser
                 .parseSignedClaims(token)
                 .getPayload();
     }
@@ -87,11 +84,22 @@ public class JwtUtils {
         return claimsResolver.apply(claims);
     }
     private Claims extractRefreshClaims(String token) {
-        return Jwts.parser()
-                .require("type", "refresh")
-                .verifyWith(getSecretKey())
-                .build()
+        return _refreshParser
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    private JwtParser _refreshParser = null;
+    private JwtParser _accessParser = null;
+    @PostConstruct
+    private void initParsers() {
+        _refreshParser = Jwts.parser()
+                .require("type", "refresh")
+                .verifyWith(_secretKey)
+                .build();
+        _accessParser = Jwts.parser()
+                .require("type", "access")
+                .verifyWith(_secretKey)
+                .build();
     }
 }

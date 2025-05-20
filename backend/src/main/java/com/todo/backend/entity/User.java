@@ -19,7 +19,7 @@ public class User {
     @Column(name = "ID", updatable = false, nullable = false, unique = true)
     private String id;
 
-    @Column(name = "CCCD")
+    @Column(name = "CCCD", unique = true, nullable = false)
     private String cccd;
 
     @Column(name = "AVATAR_URL")

@@ -1,8 +1,10 @@
 package com.todo.backend.controller.auth;
 
 import com.todo.backend.controller.auth.dto.*;
+import com.todo.backend.dao.UserRepository;
 import com.todo.backend.entity.identity.UserRole;
 import com.todo.backend.utils.auth.JwtUtils;
+import io.jsonwebtoken.JwtException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,11 +24,18 @@ import org.springframework.web.bind.annotation.*;
 public class AuthenticationController {
     private final JwtUtils jwtUtils;
     private final AuthenticationManager authManager;
+    private final UserRepository userRepository;
 
+    // test route to demo how to get logged in user id
+    // and require roles for single route
     @GetMapping("/test")
     @PreAuthorize("hasAnyAuthority('LIBRARIAN', 'ADMIN')")
     public ResponseEntity<?> test() {
-        return ResponseEntity.ok("test");
+        // get user from security context
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        var userDetails = (UserDetails) auth.getPrincipal();
+        var userId = userDetails.getUsername();
+        return ResponseEntity.ok(userId);
     }
 
     // login route
@@ -54,5 +63,23 @@ public class AuthenticationController {
         return ResponseEntity.ok(new LoginResultDto(
                 accessToken, refreshToken
         ));
+    }
+
+    // refresh jwt
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(@Valid @RequestBody RefreshTokenDto req) {
+        String userId;
+        try {
+            userId = jwtUtils.validateAndExtractIdRefreshToken(req.refreshToken());
+        } catch (JwtException e) {
+            return ResponseEntity.badRequest().body("Invalid refresh token");
+        }
+
+        var user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return ResponseEntity.badRequest().body("User with ID " + userId + " no longer exists");
+        }
+        var token = jwtUtils.generateAccessToken(userId, user.getRole());
+        return ResponseEntity.ok().body(new RefreshResultDto(token));
     }
 }

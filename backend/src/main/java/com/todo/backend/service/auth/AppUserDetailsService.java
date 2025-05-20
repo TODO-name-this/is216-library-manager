@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 // fuck java and its inability to fucking rename your types
-// even fucking C++ has type alias. it is fucking 42+ years old.
+// even C++ has type alias. it is fucking 42+ years old.
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -20,7 +20,8 @@ import java.util.List;
 public class AppUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
 
-    // use id as username
+    // use cccd as username. resulting UserDetails have Id as username.
+    // blame java's archaic systems
     @Override
     public UserDetails loadUserByUsername(String cccd) throws UsernameNotFoundException {
         // yes you cant import User entity. that's why it's var. It has to be var. Why?
@@ -31,6 +32,6 @@ public class AppUserDetailsService implements UserDetailsService {
                 new SimpleGrantedAuthority(userEntity.getRole().name())
         );
 
-        return new User(userEntity.getCccd(), userEntity.getPassword(), authorities);
+        return new User(userEntity.getId(), userEntity.getPassword(), authorities);
     }
 }

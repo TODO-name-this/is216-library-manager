@@ -14,7 +14,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.web.accept.ContentNegotiationStrategy;
 import org.springframework.web.accept.HeaderContentNegotiationStrategy;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -37,6 +37,13 @@ public class SecurityConfiguration {
         // we want separate frontend and backend url dipshit
         .csrf(AbstractHttpConfigurer::disable)
         .cors(AbstractHttpConfigurer::disable)
+
+        // disable session management (we want stateless JWT)
+        .sessionManagement(sess -> sess.sessionCreationPolicy(STATELESS))
+
+        // jwt auth
+        .addFilterBefore(jwtFilter, AuthorizationFilter.class)
+        .authenticationProvider(authenticationProvider())
 
         // Protect endpoints
         .authorizeHttpRequests(auth -> auth
@@ -64,13 +71,7 @@ public class SecurityConfiguration {
 
                 // block all other requests
                 .anyRequest().authenticated()
-        )
-        // jwt auth
-        .authenticationProvider(authenticationProvider())
-        .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-
-        // disable session management (we want stateless JWT)
-        .sessionManagement(sess -> sess.sessionCreationPolicy(STATELESS));
+        );
 
         // enable dynamically adapting response format based on
         // the client's preferences as expressed in the Accept header.
