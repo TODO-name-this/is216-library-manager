@@ -2,10 +2,10 @@ package com.todo.backend.controller;
 
 import com.todo.backend.dto.user.ResponseUserDto;
 import com.todo.backend.dto.user.UserDto;
-import com.todo.backend.entity.User;
 import com.todo.backend.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +19,7 @@ public class UserController {
         this.userService = userService;
     }
 
+    @PreAuthorize("#id == authentication.name or hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @GetMapping("/{id}")
     public ResponseEntity<?> getUser(@PathVariable String id) {
         try {
@@ -29,6 +30,12 @@ public class UserController {
         }
     }
 
+    // Only ADMIN and LIBRARIAN can create users
+    // Only ADMIN can create ADMIN or LIBRARIAN users
+    @PreAuthorize(
+        "hasAnyAuthority('ADMIN', 'LIBRARIAN') and " +
+        "(#userDto.role != 'ADMIN' and #userDto.role != 'LIBRARIAN' or hasAuthority('ADMIN'))"
+    )
     @PostMapping
     public ResponseEntity<?> createUser(@Valid @RequestBody UserDto userDto, BindingResult result) {
         try {
@@ -43,6 +50,7 @@ public class UserController {
         }
     }
 
+    @PreAuthorize("#id == authentication.name or hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUser(@PathVariable String id, @Valid @RequestBody UserDto userDto, BindingResult result) {
         try {
@@ -57,6 +65,12 @@ public class UserController {
         }
     }
 
+    // Only ADMIN and LIBRARIAN can delete users
+    // Only ADMIN can delete ADMIN or LIBRARIAN users
+    @PreAuthorize(
+        "hasAnyAuthority('ADMIN','LIBRARIAN') and " +
+        "((#target = @userService.getUser(#id)).role != 'ADMIN' and #target.role != 'LIBRARIAN' or hasAuthority('ADMIN'))"
+    )
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable String id) {
         try {
