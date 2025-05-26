@@ -32,8 +32,9 @@ public class ReviewService {
         return reviewMapper.toResponseDto(review);
     }
 
-    public ResponseReviewDto createReview(ReviewDto reviewDto) {
+    public ResponseReviewDto createReview(String userId, ReviewDto reviewDto) {
         Review review = reviewMapper.toEntity(reviewDto);
+        review.setUserId(userId);
 
         validateReview(review);
 
@@ -42,10 +43,13 @@ public class ReviewService {
         return reviewMapper.toResponseDto(review);
     }
 
-    public ResponseReviewDto updateReview(String id, ReviewDto reviewDto) {
+    public ResponseReviewDto updateReview(String id, String userId, ReviewDto reviewDto) {
         Review existingReview = reviewRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Review with ID does not exist"));
 
+        if (!existingReview.getUserId().equals(userId)) {
+            throw new IllegalArgumentException("You do not have permission to update this review");
+        }
 
         Review updatedReview = reviewMapper.toEntity(reviewDto);
         validateReview(updatedReview);
@@ -57,9 +61,13 @@ public class ReviewService {
         return reviewMapper.toResponseDto(existingReview);
     }
 
-    public void deleteReview(String id) {
+    public void deleteReview(String id, String userId) {
         Review existingReview = reviewRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Review with ID does not exist"));
+
+        if (!existingReview.getUserId().equals(userId)) {
+            throw new IllegalArgumentException("You do not have permission to delete this review");
+        }
 
         reviewRepository.delete(existingReview);
     }

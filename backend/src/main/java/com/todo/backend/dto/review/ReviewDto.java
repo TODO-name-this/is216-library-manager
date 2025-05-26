@@ -21,7 +21,4 @@ public class ReviewDto {
 
     @NotBlank(message = "Book title ID is required")
     private String bookTitleId;
-
-    @NotBlank(message = "User ID is required")
-    private String userId;
 }

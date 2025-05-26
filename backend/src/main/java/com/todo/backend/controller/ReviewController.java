@@ -5,6 +5,8 @@ import com.todo.backend.dto.review.ReviewDto;
 import com.todo.backend.service.ReviewService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,38 +30,44 @@ public class ReviewController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN', 'USER')")
     @PostMapping
-    public ResponseEntity<?> createReview(@Valid @RequestBody ReviewDto reviewDto, BindingResult result) {
+    public ResponseEntity<?> createReview(@Valid @RequestBody ReviewDto reviewDto, BindingResult result, Authentication authentication) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            ResponseReviewDto createdReview = reviewService.createReview(reviewDto);
+            String userId = authentication.getName();
+            ResponseReviewDto createdReview = reviewService.createReview(userId, reviewDto);
             return ResponseEntity.ok(createdReview);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error creating review: " + e.getMessage());
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN', 'USER')")
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateReview(@PathVariable String id, @Valid @RequestBody ReviewDto reviewDto, BindingResult result) {
+    public ResponseEntity<?> updateReview(@PathVariable String id, @Valid @RequestBody ReviewDto reviewDto, BindingResult result, Authentication authentication) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            ResponseReviewDto updatedReview = reviewService.updateReview(id, reviewDto);
+            String userId = authentication.getName();
+            ResponseReviewDto updatedReview = reviewService.updateReview(id, userId, reviewDto);
             return ResponseEntity.ok(updatedReview);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error updating review: " + e.getMessage());
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN', 'USER')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteReview(@PathVariable String id) {
+    public ResponseEntity<?> deleteReview(@PathVariable String id, Authentication authentication) {
         try {
-            reviewService.deleteReview(id);
+            String userId = authentication.getName();
+            reviewService.deleteReview(id, userId);
             return ResponseEntity.ok("Review deleted successfully");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error deleting review: " + e.getMessage());
