@@ -2,10 +2,10 @@ package com.todo.backend.controller;
 
 import com.todo.backend.dto.publisher.PublisherDto;
 import com.todo.backend.dto.publisher.ResponsePublisherDto;
-import com.todo.backend.entity.Publisher;
 import com.todo.backend.service.PublisherService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +29,7 @@ public class PublisherController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @PostMapping
     public ResponseEntity<?> createPublisher(@Valid @RequestBody PublisherDto publisherDto, BindingResult result) {
         try {
@@ -43,6 +44,7 @@ public class PublisherController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @PutMapping("/{id}")
     public ResponseEntity<?> updatePublisher(@PathVariable String id, @Valid @RequestBody PublisherDto publisherDto, BindingResult result) {
         try {
@@ -57,6 +59,7 @@ public class PublisherController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletePublisher(@PathVariable String id) {
         try {
