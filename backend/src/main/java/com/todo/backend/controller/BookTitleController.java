@@ -5,6 +5,7 @@ import com.todo.backend.dto.booktitle.ResponseBookTitleDto;
 import com.todo.backend.service.BookTitleService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,6 +29,7 @@ public class BookTitleController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @PostMapping
     public ResponseEntity<?> createBookTitle(@Valid @RequestBody BookTitleDto bookTitleDto, BindingResult result) {
         try {
@@ -42,6 +44,7 @@ public class BookTitleController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @PutMapping("/{id}")
     public ResponseEntity<?> updateBookTitle(@PathVariable String id, @Valid @RequestBody BookTitleDto bookTitleDto, BindingResult result) {
         try {
@@ -56,6 +59,7 @@ public class BookTitleController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteBookTitle(@PathVariable String id) {
         try {
