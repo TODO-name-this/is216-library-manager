@@ -6,6 +6,7 @@ import com.todo.backend.entity.Author;
 import com.todo.backend.service.AuthorService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +30,7 @@ public class AuthorController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @PostMapping
     public ResponseEntity<?> createAuthor(@Valid @RequestBody AuthorDto authorDto, BindingResult result) {
         try {
@@ -43,6 +45,7 @@ public class AuthorController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @PutMapping("/{id}")
     public ResponseEntity<?> updateAuthor(@PathVariable String id, @Valid @RequestBody AuthorDto authorDto, BindingResult result) {
         try {
@@ -57,6 +60,7 @@ public class AuthorController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteAuthor(@PathVariable String id) {
         try {
