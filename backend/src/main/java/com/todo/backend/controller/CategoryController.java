@@ -2,10 +2,10 @@ package com.todo.backend.controller;
 
 import com.todo.backend.dto.category.CategoryDto;
 import com.todo.backend.dto.category.ResponseCategoryDto;
-import com.todo.backend.entity.Category;
 import com.todo.backend.service.CategoryService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +29,7 @@ public class CategoryController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @PostMapping
     public ResponseEntity<?> createCategory(@Valid @RequestBody CategoryDto categoryDto, BindingResult result) {
         try {
@@ -43,6 +44,7 @@ public class CategoryController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @PutMapping("/{id}")
     public ResponseEntity<?> updateCategory(@PathVariable String id, @Valid @RequestBody CategoryDto categoryDto, BindingResult result) {
         try {
@@ -57,6 +59,7 @@ public class CategoryController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCategory(@PathVariable String id) {
         try {
