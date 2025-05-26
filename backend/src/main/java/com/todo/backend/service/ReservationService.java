@@ -12,6 +12,7 @@ import com.todo.backend.entity.BookCopy;
 import com.todo.backend.entity.BookTitle;
 import com.todo.backend.entity.Reservation;
 import com.todo.backend.entity.User;
+import com.todo.backend.entity.identity.UserRole;
 import com.todo.backend.mapper.ReservationMapper;
 import com.todo.backend.scheduler.jobs.ReservationExpiryJob;
 import jakarta.transaction.Transactional;
@@ -48,23 +49,31 @@ public class ReservationService {
         this.scheduler = scheduler;
     }
 
-    public ResponseReservationDto getReservation(String id) {
+    public ResponseReservationDto getReservation(String id, String userId) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
+
+        boolean isOwner = reservation.getUserId().equals(userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        boolean isAdminOrLibrarian = user.getRole().equals(UserRole.ADMIN) || user.getRole().equals(UserRole.LIBRARIAN);
+        if (!isOwner && !isAdminOrLibrarian) {
+            throw new RuntimeException("You do not have permission to view this reservation");
+        }
 
         return reservationMapper.toResponseDto(reservation);
     }
 
-    public ResponseReservationDto createReservation(CreateReservationDto createReservationDto) {
+    public ResponseReservationDto createReservation(String userId, CreateReservationDto createReservationDto) {
         LocalDate today = LocalDate.now();
 
         Reservation reservation = reservationMapper.toEntity(createReservationDto);
+        reservation.setUserId(userId);
 
         validateReservationRules(reservation);
 
         // Check if a user exists
-        User user = userRepository.findById(createReservationDto.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
         // Check if a user has enough balances to reserve
         if (user.getBalance() < createReservationDto.getDeposit()) {
@@ -101,9 +110,18 @@ public class ReservationService {
         return reservationMapper.toResponseDto(reservation);
     }
 
-    public ResponseReservationDto updateReservation(String id, UpdateReservationDto updateReservationDto) {
+    public ResponseReservationDto updateReservation(String id, String userId, UpdateReservationDto updateReservationDto) {
         Reservation existingReservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
+
+        // ADMIN, LIBRARIAN or the user who created the reservation can update it
+        boolean isOwner = existingReservation.getUserId().equals(userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        boolean isAdminOrLibrarian = user.getRole().equals(UserRole.ADMIN) || user.getRole().equals(UserRole.LIBRARIAN);
+        if (!isOwner && !isAdminOrLibrarian) {
+            throw new RuntimeException("You do not have permission to update this reservation");
+        }
 
         // Prevent updating a reservation that is already COMPLETED, CANCELLED or EXPIRED
         if (existingReservation.getStatus().equals("COMPLETED") ||
@@ -113,22 +131,23 @@ public class ReservationService {
         }
 
         // Update the user's balance if the deposit changes
+        User owner = userRepository.findById(existingReservation.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
         if (existingReservation.getDeposit() > updateReservationDto.getDeposit()) {
             int difference = existingReservation.getDeposit() - updateReservationDto.getDeposit();
-            User user = userRepository.findById(existingReservation.getUserId())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-            user.setBalance(user.getBalance() + difference);
-            userRepository.save(user);
+
+            owner.setBalance(owner.getBalance() + difference);
+            userRepository.save(owner);
         }
         else if (existingReservation.getDeposit() < updateReservationDto.getDeposit()) {
             int difference = updateReservationDto.getDeposit() - existingReservation.getDeposit();
-            User user = userRepository.findById(existingReservation.getUserId())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-            if (user.getBalance() < difference) {
+
+            if (owner.getBalance() < difference) {
                 throw new RuntimeException("User does not have enough balance to update the reservation");
             }
-            user.setBalance(user.getBalance() - difference);
-            userRepository.save(user);
+
+            owner.setBalance(owner.getBalance() - difference);
+            userRepository.save(owner);
         }
 
         LocalDate oldExpirationDate = existingReservation.getExpirationDate();
@@ -152,7 +171,7 @@ public class ReservationService {
         return reservationMapper.toResponseDto(existingReservation);
     }
 
-    public ResponseReservationDto partialUpdateReservation(String id, PartialUpdateReservationDto partialUpdateReservationDto) {
+    public ResponseReservationDto partialUpdateReservation(String id, String userId, PartialUpdateReservationDto partialUpdateReservationDto) {
         String status = partialUpdateReservationDto.getStatus();
 
         if (!status.equals("COMPLETED") && !status.equals("CANCELLED")) {
@@ -161,6 +180,16 @@ public class ReservationService {
 
         Reservation existingReservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
+
+        // ADMIN, LIBRARIAN or the user who created the reservation can update it
+        boolean isOwner = existingReservation.getUserId().equals(userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        boolean isAdminOrLibrarian = user.getRole().equals(UserRole.ADMIN) || user.getRole().equals(UserRole.LIBRARIAN);
+
+        if (!isOwner && !isAdminOrLibrarian) {
+            throw new RuntimeException("You do not have permission to update this reservation");
+        }
 
         // Prevent updating a reservation that is already COMPLETED, CANCELLED or EXPIRED
         if (existingReservation.getStatus().equals("COMPLETED") ||
