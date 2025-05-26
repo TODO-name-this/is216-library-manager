@@ -6,6 +6,7 @@ import com.todo.backend.entity.BookCopy;
 import com.todo.backend.service.BookCopyService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +30,7 @@ public class BookCopyController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @PostMapping
     public ResponseEntity<?> createBookCopy(@Valid @RequestBody BookCopyDto bookCopyDto, BindingResult result) {
         try {
@@ -43,6 +45,7 @@ public class BookCopyController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteBookCopy(@PathVariable String id) {
         try {
