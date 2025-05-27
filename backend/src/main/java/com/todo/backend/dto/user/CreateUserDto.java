@@ -1,5 +1,6 @@
 package com.todo.backend.dto.user;
 
+import com.todo.backend.entity.identity.UserRole;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Data;
@@ -9,7 +10,7 @@ import java.time.LocalDate;
 
 @Data
 @Builder
-public class UserDto {
+public class CreateUserDto {
     @NotBlank(message = "CCCD is required")
     private String cccd;
 
@@ -30,8 +31,8 @@ public class UserDto {
     @Size(min = 8, message = "Password must be at least 8 characters long")
     private String password;
 
-    @NotBlank(message = "Role is required")
-    private String role;
+    @NotNull(message = "Role is required")
+    private UserRole role;
 
     @Min(value = 0, message = "Balance must be positive or zero")
     private int balance;
