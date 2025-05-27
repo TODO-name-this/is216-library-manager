@@ -1,7 +1,8 @@
 package com.todo.backend.controller;
 
+import com.todo.backend.dto.user.PartialUpdateUserDto;
 import com.todo.backend.dto.user.ResponseUserDto;
-import com.todo.backend.dto.user.UserDto;
+import com.todo.backend.dto.user.CreateUserDto;
 import com.todo.backend.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -33,32 +34,34 @@ public class UserController {
     // Only ADMIN and LIBRARIAN can create users
     // Only ADMIN can create ADMIN or LIBRARIAN users
     @PreAuthorize(
-        "hasAnyAuthority('ADMIN', 'LIBRARIAN') and " +
-        "(#userDto.role != 'ADMIN' and #userDto.role != 'LIBRARIAN' or hasAuthority('ADMIN'))"
+        "(hasAuthority('ADMIN')) or " +
+        "(hasAuthority('LIBRARIAN') and #createUserDto.role.name() != 'ADMIN' and #createUserDto.role.name() != 'LIBRARIAN')"
     )
     @PostMapping
-    public ResponseEntity<?> createUser(@Valid @RequestBody UserDto userDto, BindingResult result) {
+    public ResponseEntity<?> createUser(@Valid @RequestBody CreateUserDto createUserDto, BindingResult result) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            ResponseUserDto createdUser = userService.createUser(userDto);
+            ResponseUserDto createdUser = userService.createUser(createUserDto);
             return ResponseEntity.ok(createdUser);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error creating user: " + e.getMessage());
         }
     }
 
-    @PreAuthorize("#id == authentication.name or hasAnyAuthority('ADMIN', 'LIBRARIAN')")
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable String id, @Valid @RequestBody UserDto userDto, BindingResult result) {
+    // Only owner of the account or ADMIN/LIBRARIAN can update user details
+    // Only ADMIN can update ADMIN or LIBRARIAN users
+    @PreAuthorize(
+        "#id == authentication.name or " +
+        "hasAnyAuthority('ADMIN') or  " +
+        "(hasAnyAuthority('LIBRARIAN') and #partialUpdateUserDto.role.name() != 'LIBRARIAN' and #partialUpdateUserDto.role.name() != 'ADMIN')"
+    )
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody PartialUpdateUserDto partialUpdateUserDto) {
         try {
-            if (result.hasErrors()) {
-                return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
-            }
-
-            ResponseUserDto updatedUser = userService.updateUser(id, userDto);
+            ResponseUserDto updatedUser = userService.updateUser(id, partialUpdateUserDto);
             return ResponseEntity.ok(updatedUser);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error updating user: " + e.getMessage());
@@ -67,10 +70,7 @@ public class UserController {
 
     // Only ADMIN and LIBRARIAN can delete users
     // Only ADMIN can delete ADMIN or LIBRARIAN users
-    @PreAuthorize(
-        "hasAnyAuthority('ADMIN','LIBRARIAN') and " +
-        "((#target = @userService.getUser(#id)).role != 'ADMIN' and #target.role != 'LIBRARIAN' or hasAuthority('ADMIN'))"
-    )
+    @PreAuthorize("@userService.canDeleteUser(#id, authentication.name)")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable String id) {
         try {
