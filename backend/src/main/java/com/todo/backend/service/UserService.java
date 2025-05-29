@@ -1,13 +1,17 @@
 package com.todo.backend.service;
 
 import com.todo.backend.dao.UserRepository;
+import com.todo.backend.dto.user.PartialUpdateUserDto;
 import com.todo.backend.dto.user.ResponseUserDto;
-import com.todo.backend.dto.user.UserDto;
+import com.todo.backend.dto.user.CreateUserDto;
 import com.todo.backend.entity.Transaction;
 import com.todo.backend.entity.User;
 import com.todo.backend.entity.identity.UserRole;
 import com.todo.backend.mapper.UserMapper;
 import jakarta.transaction.Transactional;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.parameters.P;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,10 +21,12 @@ import java.util.List;
 public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, UserMapper userMapper) {
+    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public ResponseUserDto getUser(String id) {
@@ -30,23 +36,40 @@ public class UserService {
         return userMapper.toResponseDto(user);
     }
 
-    public ResponseUserDto createUser(UserDto userDto) {
-        User user = userMapper.toEntity(userDto);
+    public ResponseUserDto createUser(CreateUserDto createUserDto) {
+        User user = userMapper.toEntity(createUserDto);
 
         validateUserRules(user);
+
+        String hashedPassword = passwordEncoder.encode(user.getPassword());
+        user.setPassword(hashedPassword);
 
         userRepository.save(user);
         return userMapper.toResponseDto(user);
     }
 
-    public ResponseUserDto updateUser(String id, UserDto userDto) {
+    public ResponseUserDto updateUser(String id, PartialUpdateUserDto partialUpdateUserDto) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User with this ID does not exist"));
 
-        User newUserData = userMapper.toEntity(userDto);
-        validateUserRules(newUserData, existingUser.getId());
+        userMapper.updateEntityFromDto(partialUpdateUserDto, existingUser);
+        validateUserRules(existingUser, existingUser.getId());
 
-        userMapper.updateEntityFromDto(userDto, existingUser);
+        String newPassword = partialUpdateUserDto.getNewPassword();
+        String oldPassword = partialUpdateUserDto.getOldPassword();
+
+        if (newPassword != null && !newPassword.isBlank()) {
+            if (oldPassword == null || oldPassword.isBlank()) {
+                throw new IllegalArgumentException("Old password is required when setting a new password");
+            }
+
+            if (!passwordEncoder.matches(oldPassword, existingUser.getPassword())) {
+                throw new IllegalArgumentException("Old password is incorrect");
+            }
+
+            String hashedNewPassword = passwordEncoder.encode(newPassword);
+            existingUser.setPassword(hashedNewPassword);
+        }
 
         userRepository.save(existingUser);
         return userMapper.toResponseDto(existingUser);
@@ -55,10 +78,6 @@ public class UserService {
     public void deleteUser(String id) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User with this ID does not exist"));
-
-        if (existingUser.getRole() == UserRole.ADMIN) {
-            throw new IllegalArgumentException("Cannot delete admin user");
-        }
 
         List<Transaction> transactions = existingUser.getTransactions();
         boolean hasUnreturnedTransactions = transactions.stream()
@@ -71,6 +90,33 @@ public class UserService {
         }
 
         userRepository.delete(existingUser);
+    }
+
+    public boolean canDeleteUser(String deleteUserId, String currentUserId) {
+        if (deleteUserId == null || deleteUserId.isBlank() || currentUserId == null || currentUserId.isBlank() ) {
+            return false;
+        }
+
+        if (deleteUserId.equals(currentUserId)) {
+            return false;
+        }
+
+        UserRole currentUserRole = userRepository.findById(currentUserId)
+                .map(User::getRole)
+                .orElse(UserRole.USER);
+
+        User deleteUser = userRepository.findById(deleteUserId).orElse(null);
+        if (deleteUser == null) {
+            return false;
+        }
+
+        if (currentUserRole == UserRole.ADMIN) {
+            return true;
+        } else if (currentUserRole == UserRole.LIBRARIAN) {
+            return deleteUser.getRole() != UserRole.ADMIN && deleteUser.getRole() != UserRole.LIBRARIAN;
+        }
+
+        return false;
     }
 
     private void validateUserRules(User user) {

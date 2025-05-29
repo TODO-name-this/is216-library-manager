@@ -8,13 +8,14 @@ import java.time.LocalDate;
 
 @Data
 @Builder
-public class ResponseUserDto {
-    private String id;
+public class PartialUpdateUserDto {
     private String cccd;
     private LocalDate dob;
     private String avatarUrl;
     private String name;
     private String email;
+    private String oldPassword;
+    private String newPassword;
     private UserRole role;
     private int balance;
 }

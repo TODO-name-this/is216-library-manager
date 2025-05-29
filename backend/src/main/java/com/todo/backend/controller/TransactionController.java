@@ -7,6 +7,7 @@ import com.todo.backend.entity.Transaction;
 import com.todo.backend.service.TransactionService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,6 +31,7 @@ public class TransactionController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @PostMapping
     public ResponseEntity<?> createTransaction(@Valid @RequestBody CreateTransactionDto createTransactionDto, BindingResult result) {
         try {
@@ -44,6 +46,7 @@ public class TransactionController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @PutMapping("/{id}")
     public ResponseEntity<?> updateTransaction(@PathVariable String id, @Valid @RequestBody UpdateTransactionDto updateTransactionDto, BindingResult result) {
         try {
@@ -58,6 +61,7 @@ public class TransactionController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteTransaction(@PathVariable String id) {
         try {

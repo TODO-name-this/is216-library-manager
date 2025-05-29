@@ -70,7 +70,7 @@ public class SecurityConfiguration {
                     .hasAuthority(UserRole.ADMIN.name())
 
                 // block all other requests
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
         );
 
         // enable dynamically adapting response format based on

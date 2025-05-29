@@ -18,7 +18,4 @@ public class CreateReservationDto {
 
     @NotBlank(message = "Book title ID is required")
     private String bookTitleId;
-
-    @NotBlank(message = "Book copy ID is required")
-    private String userId;
 }
