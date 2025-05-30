@@ -62,12 +62,6 @@ public class JwtUtils {
     }
 
     private SecretKey _secretKey = null;
-    // cache the key
-    @PostConstruct
-    private void initSecretKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET);
-        _secretKey = Keys.hmacShaKeyFor(keyBytes);
-    }
 
     private <T> T extractAccessClaim(String token, Function<Claims, T> claimsResolver) {
         Claims claims = extractAccessClaims(token);
@@ -91,13 +85,17 @@ public class JwtUtils {
 
     private JwtParser _refreshParser = null;
     private JwtParser _accessParser = null;
+    // Cache the key
     @PostConstruct
-    private void initParsers() {
-        _refreshParser = Jwts.parser()
+    private void initJwt() {
+        byte[] keyBytes = io.jsonwebtoken.io.Decoders.BASE64.decode(SECRET);
+        _secretKey = io.jsonwebtoken.security.Keys.hmacShaKeyFor(keyBytes);
+
+        _refreshParser = io.jsonwebtoken.Jwts.parser()
                 .require("type", "refresh")
                 .verifyWith(_secretKey)
                 .build();
-        _accessParser = Jwts.parser()
+        _accessParser = io.jsonwebtoken.Jwts.parser()
                 .require("type", "access")
                 .verifyWith(_secretKey)
                 .build();
