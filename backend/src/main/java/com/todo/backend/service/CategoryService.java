@@ -8,6 +8,8 @@ import com.todo.backend.mapper.CategoryMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @Transactional
 public class CategoryService {
@@ -17,6 +19,13 @@ public class CategoryService {
     public CategoryService(CategoryRepository categoryRepository, CategoryMapper categoryMapper) {
         this.categoryRepository = categoryRepository;
         this.categoryMapper = categoryMapper;
+    }
+
+    public List<ResponseCategoryDto> getAllCategories() {
+        List<Category> categories = categoryRepository.findAll();
+        return categories.stream()
+                .map(categoryMapper::toResponseDto)
+                .toList();
     }
 
     public ResponseCategoryDto getCategory(String id) {

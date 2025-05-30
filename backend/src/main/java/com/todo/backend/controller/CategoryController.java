@@ -19,6 +19,15 @@ public class CategoryController {
         this.categoryService = categoryService;
     }
 
+    @GetMapping()
+    public ResponseEntity<?> getAllCategories() {
+        try {
+            return ResponseEntity.ok(categoryService.getAllCategories());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching categories: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getCategory(@PathVariable String id) {
         try {

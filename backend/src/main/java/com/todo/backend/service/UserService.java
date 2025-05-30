@@ -29,6 +29,11 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    public List<ResponseUserDto> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return userMapper.toResponseDtoList(users);
+    }
+
     public ResponseUserDto getUser(String id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User with this ID does not exist"));

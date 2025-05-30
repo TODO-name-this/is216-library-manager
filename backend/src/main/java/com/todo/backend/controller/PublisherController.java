@@ -19,6 +19,15 @@ public class PublisherController {
         this.publisherService = publisherService;
     }
 
+    @GetMapping()
+    public ResponseEntity<?> getAllPublishers() {
+        try {
+            return ResponseEntity.ok(publisherService.getAllPublishers());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching publishers: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getPublisher(@PathVariable String id) {
         try {

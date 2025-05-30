@@ -10,6 +10,8 @@ import com.todo.backend.mapper.ReviewMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @Transactional
 public class ReviewService {
@@ -23,6 +25,13 @@ public class ReviewService {
         this.bookTitleRepository = bookTitleRepository;
         this.userRepository = userRepository;
         this.reviewMapper = reviewMapper;
+    }
+
+    public List<ResponseReviewDto> getAllReviews() {
+        List<Review> reviews = reviewRepository.findAll();
+        return reviews.stream()
+                .map(reviewMapper::toResponseDto)
+                .toList();
     }
 
     public ResponseReviewDto getReview(String id) {

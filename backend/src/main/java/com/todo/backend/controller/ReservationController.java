@@ -12,6 +12,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @CrossOrigin("http://localhost:3000")
 @RestController
 @RequestMapping("/api/reservation")
@@ -20,6 +22,17 @@ public class ReservationController {
 
     public ReservationController(ReservationService reservationService) {
         this.reservationService = reservationService;
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
+    @GetMapping
+    public ResponseEntity<?> getAllReservations() {
+        try {
+            List<ResponseReservationDto> reservations = reservationService.getAllReservations();
+            return ResponseEntity.ok(reservations);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching reservations: " + e.getMessage());
+        }
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN', 'USER')")

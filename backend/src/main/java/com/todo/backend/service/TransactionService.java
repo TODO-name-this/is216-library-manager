@@ -52,6 +52,20 @@ public class TransactionService {
         return responseTransactionDto;
     }
 
+    public List<ResponseTransactionDto> getAllTransactions() {
+        List<Transaction> transactions = transactionRepository.findAll();
+        return transactions.stream().map(transaction -> {
+            List<ResponseTransactionDetailDto> details = transaction.getTransactionDetails()
+                    .stream()
+                    .map(transactionDetailMapper::toResponseDto)
+                    .toList();
+
+            ResponseTransactionDto responseTransactionDto = transactionMapper.toResponseDto(transaction);
+            responseTransactionDto.setDetails(details);
+            return responseTransactionDto;
+        }).toList();
+    }
+
     public ResponseTransactionDto createTransaction(CreateTransactionDto createTransactionDto) {
         LocalDate today = LocalDate.now();
 

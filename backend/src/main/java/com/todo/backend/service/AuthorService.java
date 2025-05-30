@@ -8,6 +8,8 @@ import com.todo.backend.mapper.AuthorMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @Transactional
 public class AuthorService {
@@ -17,6 +19,11 @@ public class AuthorService {
     public AuthorService(AuthorRepository authorRepository, AuthorMapper authorMapper) {
         this.authorRepository = authorRepository;
         this.authorMapper = authorMapper;
+    }
+
+    public List<ResponseAuthorDto> getAllAuthors() {
+        List<Author> authors = authorRepository.findAll();
+        return authorMapper.toResponseDtoList(authors);
     }
 
     public ResponseAuthorDto getAuthor(String id) {

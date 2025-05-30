@@ -8,6 +8,8 @@ import com.todo.backend.mapper.PublisherMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @Transactional
 public class PublisherService {
@@ -17,6 +19,13 @@ public class PublisherService {
     public PublisherService(PublisherRepository publisherRepository, PublisherMapper publisherMapper) {
         this.publisherRepository = publisherRepository;
         this.publisherMapper = publisherMapper;
+    }
+
+    public List<ResponsePublisherDto> getAllPublishers() {
+        List<Publisher> publishers = publisherRepository.findAll();
+        return publishers.stream()
+                .map(publisherMapper::toResponseDto)
+                .toList();
     }
 
     public ResponsePublisherDto getPublisher(String id) {

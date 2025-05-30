@@ -7,6 +7,8 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
 public interface BookTitleMapper {
     BookTitle toEntity(BookTitleDto bookTitleDto);
@@ -16,4 +18,5 @@ public interface BookTitleMapper {
     void updateEntityFromDto(BookTitleDto bookTitleDto, @MappingTarget BookTitle bookTitle);
 
     ResponseBookTitleDto toResponseDto(BookTitle bookTitle);
+    List<ResponseBookTitleDto> toResponseDtoList(List<BookTitle> bookTitles);
 }
