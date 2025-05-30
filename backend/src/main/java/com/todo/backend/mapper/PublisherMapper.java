@@ -7,6 +7,8 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
 public interface PublisherMapper {
     Publisher toEntity(PublisherDto publisherDto);
@@ -16,4 +18,5 @@ public interface PublisherMapper {
     void updateEntityFromDto(PublisherDto publisherDto, @MappingTarget Publisher publisher);
 
     ResponsePublisherDto toResponseDto(Publisher publisher);
+    List<ResponsePublisherDto> toResponseDtoList(List<Publisher> publishers);
 }

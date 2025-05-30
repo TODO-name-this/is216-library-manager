@@ -6,6 +6,8 @@ import com.todo.backend.dto.user.CreateUserDto;
 import com.todo.backend.entity.User;
 import org.mapstruct.*;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring",
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface UserMapper {
@@ -17,4 +19,5 @@ public interface UserMapper {
     void updateEntityFromDto(PartialUpdateUserDto partialUpdateUserDto, @MappingTarget User user);
 
     ResponseUserDto toResponseDto(User user);
+    List<ResponseUserDto> toResponseDtoList(List<User> users);
 }

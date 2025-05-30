@@ -7,6 +7,8 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
 public interface ReviewMapper {
     Review toEntity(ReviewDto dto);
@@ -16,4 +18,5 @@ public interface ReviewMapper {
     void updateEntityFromDto(ReviewDto dto, @MappingTarget Review review);
 
     ResponseReviewDto toResponseDto(Review review);
+    List<ResponseReviewDto> toResponseDtoList(List<Review> reviews);
 }

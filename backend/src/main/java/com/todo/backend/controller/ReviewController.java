@@ -20,6 +20,15 @@ public class ReviewController {
         this.reviewService = reviewService;
     }
 
+    @GetMapping()
+    public ResponseEntity<?> getAllReviews() {
+        try {
+            return ResponseEntity.ok(reviewService.getAllReviews());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching reviews: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getReview(@PathVariable String id) {
         try {

@@ -5,10 +5,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
+@RepositoryRestResource(exported = false)
 public interface BookTitleRepository extends JpaRepository<BookTitle, String> {
     Page<BookTitle> findByTitleContainingIgnoreCase(@RequestParam("title") String title, Pageable pageable);
     BookTitle findByIsbn(@RequestParam("isbn") String isbn);
@@ -30,7 +32,7 @@ public interface BookTitleRepository extends JpaRepository<BookTitle, String> {
     Page<BookTitle> findByBookAuthorsName(@RequestParam("authorName") String authorName, Pageable pageable);
 
     @Query("SELECT b FROM BookTitle b JOIN b.bookAuthors bc WHERE bc.author.name IN :authorNames")
-    Page<BookTitle> findByBookAuthorsName(List<String> authorNames, Pageable pageable);
+    Page<BookTitle> findByBookAuthorsNames(List<String> authorNames, Pageable pageable);
 
     // Search by category
     @Query("SELECT b FROM BookTitle b JOIN b.bookCategories bc WHERE bc.category.id = :categoryId")

@@ -47,9 +47,7 @@ public class ReservationService {
         this.userRepository = userRepository;
         this.reservationMapper = reservationMapper;
         this.scheduler = scheduler;
-    }
-
-    public ResponseReservationDto getReservation(String id, String userId) {
+    }    public ResponseReservationDto getReservation(String id, String userId) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
 
@@ -62,6 +60,11 @@ public class ReservationService {
         }
 
         return reservationMapper.toResponseDto(reservation);
+    }
+
+    public List<ResponseReservationDto> getAllReservations() {
+        List<Reservation> reservations = reservationRepository.findAll();
+        return reservationMapper.toResponseDtoList(reservations);
     }
 
     public ResponseReservationDto createReservation(String userId, CreateReservationDto createReservationDto) {

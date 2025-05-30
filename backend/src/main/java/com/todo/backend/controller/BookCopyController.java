@@ -20,10 +20,19 @@ public class BookCopyController {
         this.bookCopyService = bookCopyService;
     }
 
+    @GetMapping()
+    public ResponseEntity<?> getAllBookCopies() {
+        try {
+            return ResponseEntity.ok(bookCopyService.getAllBookCopies());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching book copies: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getBookCopy(@PathVariable String id) {
         try {
-            BookCopy bookCopy = bookCopyService.getBookCopy(id);
+            ResponseBookCopyDto bookCopy = bookCopyService.getBookCopyDto(id);
             return ResponseEntity.ok(bookCopy);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error fetching book copy: " + e.getMessage());

@@ -19,6 +19,15 @@ public class BookTitleController {
         this.bookTitleService = bookTitleService;
     }
 
+    @GetMapping()
+    public ResponseEntity<?> getAllBookTitles() {
+        try {
+            return ResponseEntity.ok(bookTitleService.getAllBookTitles());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching book titles: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getBookTitle(@PathVariable String id) {
         try {

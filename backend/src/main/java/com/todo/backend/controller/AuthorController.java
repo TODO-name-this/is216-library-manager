@@ -20,6 +20,15 @@ public class AuthorController {
         this.authorService = authorService;
     }
 
+    @GetMapping()
+    public ResponseEntity<?> getAllAuthors() {
+        try {
+            return ResponseEntity.ok(authorService.getAllAuthors());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching authors: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getAuthor(@PathVariable String id) {
         try {

@@ -11,6 +11,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @CrossOrigin("http://localhost:3000")
 @RestController
 @RequestMapping("/api/transaction")
@@ -19,6 +21,17 @@ public class TransactionController {
 
     public TransactionController(TransactionService transactionService) {
         this.transactionService = transactionService;
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
+    @GetMapping
+    public ResponseEntity<?> getAllTransactions() {
+        try {
+            List<ResponseTransactionDto> transactions = transactionService.getAllTransactions();
+            return ResponseEntity.ok(transactions);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching transactions: " + e.getMessage());
+        }
     }
 
     @GetMapping("/{id}")

@@ -25,6 +25,23 @@ public class BookTitleService {
         this.bookTitleMapper = bookTitleMapper;
     }
 
+    public List<ResponseBookTitleDto> getAllBookTitles() {
+        List<BookTitle> bookTitles = bookTitleRepository.findAll();
+        List<ResponseBookTitleDto> responseBookTitleDtos = new ArrayList<>();
+
+        for (BookTitle bookTitle : bookTitles) {
+            ResponseBookTitleDto responseBookTitleDto = bookTitleMapper.toResponseDto(bookTitle);
+            List<String> authorIds = new ArrayList<>(bookTitle.getBookAuthors().stream().map(BookAuthor::getAuthorId).toList());
+            List<String> categoryIds = new ArrayList<>(bookTitle.getBookCategories().stream().map(BookCategory::getCategoryId).toList());
+
+            responseBookTitleDto.setAuthorIds(authorIds);
+            responseBookTitleDto.setCategoryIds(categoryIds);
+            responseBookTitleDtos.add(responseBookTitleDto);
+        }
+
+        return responseBookTitleDtos;
+    }
+
     public ResponseBookTitleDto getBookTitle(String id) {
         BookTitle bookTitle = bookTitleRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Book title ID does not exist"));
