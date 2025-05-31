@@ -17,14 +17,21 @@ public class BookTitleController {
 
     public BookTitleController(BookTitleService bookTitleService) {
         this.bookTitleService = bookTitleService;
-    }
-
-    @GetMapping()
+    }    @GetMapping()
     public ResponseEntity<?> getAllBookTitles() {
         try {
             return ResponseEntity.ok(bookTitleService.getAllBookTitles());
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error fetching book titles: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/names")
+    public ResponseEntity<?> getAllBookTitlesWithCategoryAndAuthorName() {
+        try {
+            return ResponseEntity.ok(bookTitleService.getAllBookTitlesWithCategoryAndAuthorName());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching book titles with category and author names: " + e.getMessage());
         }
     }
 

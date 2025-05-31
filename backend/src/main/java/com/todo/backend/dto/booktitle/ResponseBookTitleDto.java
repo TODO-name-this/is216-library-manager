@@ -1,5 +1,6 @@
 package com.todo.backend.dto.booktitle;
 
+import com.todo.backend.dto.review.ResponseReviewDto;
 import lombok.Builder;
 import lombok.Data;
 
@@ -15,9 +16,13 @@ public class ResponseBookTitleDto {
     private String isbn;
     private boolean canBorrow;
     private LocalDate publishedDate;
-    private String publisherId;
-
-    private List<String> authorIds;
+    private String publisherId;    private List<String> authorIds;
 
     private List<String> categoryIds;
+    
+    private List<String> authorNames;
+    
+    private List<String> categoryNames;
+    
+    private List<ResponseReviewDto> reviews;
 }

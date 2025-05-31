@@ -3,11 +3,13 @@ package com.todo.backend.service;
 import com.todo.backend.dao.BookTitleRepository;
 import com.todo.backend.dto.booktitle.BookTitleDto;
 import com.todo.backend.dto.booktitle.ResponseBookTitleDto;
+import com.todo.backend.dto.review.ResponseReviewDto;
 import com.todo.backend.entity.BookAuthor;
 import com.todo.backend.entity.BookCategory;
 import com.todo.backend.entity.BookCopy;
 import com.todo.backend.entity.BookTitle;
 import com.todo.backend.mapper.BookTitleMapper;
+import com.todo.backend.mapper.ReviewMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,13 +21,13 @@ import java.util.List;
 public class BookTitleService {
     private final BookTitleRepository bookTitleRepository;
     private final BookTitleMapper bookTitleMapper;
+    private final ReviewMapper reviewMapper;
 
-    public BookTitleService(BookTitleRepository bookTitleRepository, BookTitleMapper bookTitleMapper) {
+    public BookTitleService(BookTitleRepository bookTitleRepository, BookTitleMapper bookTitleMapper, ReviewMapper reviewMapper) {
         this.bookTitleRepository = bookTitleRepository;
         this.bookTitleMapper = bookTitleMapper;
-    }
-
-    public List<ResponseBookTitleDto> getAllBookTitles() {
+        this.reviewMapper = reviewMapper;
+    }    public List<ResponseBookTitleDto> getAllBookTitles() {
         List<BookTitle> bookTitles = bookTitleRepository.findAll();
         List<ResponseBookTitleDto> responseBookTitleDtos = new ArrayList<>();
 
@@ -37,6 +39,23 @@ public class BookTitleService {
             responseBookTitleDto.setAuthorIds(authorIds);
             responseBookTitleDto.setCategoryIds(categoryIds);
             responseBookTitleDtos.add(responseBookTitleDto);
+        }        return responseBookTitleDtos;
+    }
+
+    public List<ResponseBookTitleDto> getAllBookTitlesWithCategoryAndAuthorName() {
+        List<BookTitle> bookTitles = bookTitleRepository.findAll();
+        List<ResponseBookTitleDto> responseBookTitleDtos = new ArrayList<>();
+
+        for (BookTitle bookTitle : bookTitles) {
+            ResponseBookTitleDto responseBookTitleDto = bookTitleMapper.toResponseDto(bookTitle);
+            List<String> authorNames = new ArrayList<>(bookTitle.getBookAuthors().stream()
+                    .map(bookAuthor -> bookAuthor.getAuthor().getName()).toList());
+            List<String> categoryNames = new ArrayList<>(bookTitle.getBookCategories().stream()
+                    .map(bookCategory -> bookCategory.getCategory().getName()).toList());
+
+            responseBookTitleDto.setAuthorNames(authorNames);
+            responseBookTitleDto.setCategoryNames(categoryNames);
+            responseBookTitleDtos.add(responseBookTitleDto);
         }
 
         return responseBookTitleDtos;
@@ -47,11 +66,26 @@ public class BookTitleService {
                 .orElseThrow(() -> new IllegalArgumentException("Book title ID does not exist"));
 
         ResponseBookTitleDto responseBookTitleDto = bookTitleMapper.toResponseDto(bookTitle);
+        
+        // Set author and category IDs
         List<String> authorIds = new ArrayList<>(bookTitle.getBookAuthors().stream().map(BookAuthor::getAuthorId).toList());
         List<String> categoryIds = new ArrayList<>(bookTitle.getBookCategories().stream().map(BookCategory::getCategoryId).toList());
-
         responseBookTitleDto.setAuthorIds(authorIds);
         responseBookTitleDto.setCategoryIds(categoryIds);
+        
+        // Set author and category names
+        List<String> authorNames = new ArrayList<>(bookTitle.getBookAuthors().stream()
+                .map(bookAuthor -> bookAuthor.getAuthor().getName()).toList());
+        List<String> categoryNames = new ArrayList<>(bookTitle.getBookCategories().stream()
+                .map(bookCategory -> bookCategory.getCategory().getName()).toList());
+        responseBookTitleDto.setAuthorNames(authorNames);
+        responseBookTitleDto.setCategoryNames(categoryNames);
+        
+        // Set reviews
+        List<ResponseReviewDto> reviews = bookTitle.getReviews().stream()
+                .map(reviewMapper::toResponseDto)
+                .toList();
+        responseBookTitleDto.setReviews(reviews);
 
         return responseBookTitleDto;
     }

@@ -145,8 +145,24 @@ This document describes all backend API endpoints, including HTTP methods, paths
 {
     "id": "bt1",
     "title": "Effective Java",
-    "author": "Joshua Bloch",
-    "publisher": "Addison-Wesley"
+    "isbn": "978-0134685991",
+    "canBorrow": true,
+    "publishedDate": "2017-12-27",
+    "publisherId": "pub1",
+    "authorIds": ["a1"],
+    "categoryIds": ["cat1"],
+    "authorNames": ["Joshua Bloch"],
+    "categoryNames": ["Programming"],
+    "reviews": [
+        {
+            "id": "r1",
+            "date": "2025-05-30",
+            "comment": "Great book for Java developers!",
+            "star": 5,
+            "bookTitleId": "bt1",
+            "userId": "u1"
+        }
+    ]
 }
 ```
 
