@@ -66,6 +66,20 @@ public class TransactionService {
         }).toList();
     }
 
+    public List<ResponseTransactionDto> getTransactionsByUserId(String userId) {
+        List<Transaction> transactions = transactionRepository.findByUserId(userId);
+        return transactions.stream().map(transaction -> {
+            List<ResponseTransactionDetailDto> details = transaction.getTransactionDetails()
+                    .stream()
+                    .map(transactionDetailMapper::toResponseDto)
+                    .toList();
+
+            ResponseTransactionDto responseTransactionDto = transactionMapper.toResponseDto(transaction);
+            responseTransactionDto.setDetails(details);
+            return responseTransactionDto;
+        }).toList();
+    }
+
     public ResponseTransactionDto createTransaction(CreateTransactionDto createTransactionDto) {
         LocalDate today = LocalDate.now();
 

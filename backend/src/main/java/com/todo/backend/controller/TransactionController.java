@@ -8,6 +8,7 @@ import com.todo.backend.service.TransactionService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,6 +32,18 @@ public class TransactionController {
             return ResponseEntity.ok(transactions);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error fetching transactions: " + e.getMessage());
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('USER')")
+    @GetMapping("/my")
+    public ResponseEntity<?> getMyTransactions(Authentication authentication) {
+        try {
+            String userId = authentication.getName();
+            List<ResponseTransactionDto> transactions = transactionService.getTransactionsByUserId(userId);
+            return ResponseEntity.ok(transactions);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching user transactions: " + e.getMessage());
         }
     }
 

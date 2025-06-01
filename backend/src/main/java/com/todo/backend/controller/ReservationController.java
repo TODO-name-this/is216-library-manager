@@ -105,4 +105,16 @@ public class ReservationController {
             return ResponseEntity.status(500).body("Error deleting reservation: " + e.getMessage());
         }
     }
+
+    @PreAuthorize("hasAnyAuthority('USER')")
+    @GetMapping("/my")
+    public ResponseEntity<?> getMyReservations(Authentication authentication) {
+        try {
+            String userId = authentication.getName();
+            List<ResponseReservationDto> reservations = reservationService.getReservationsByUserId(userId);
+            return ResponseEntity.ok(reservations);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching user reservations: " + e.getMessage());
+        }
+    }
 }

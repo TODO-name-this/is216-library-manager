@@ -13,6 +13,7 @@ import java.util.List;
 
 @RepositoryRestResource(exported = false)
 public interface TransactionRepository extends JpaRepository<Transaction, String> {
+    List<Transaction> findByUserId(@RequestParam("userId") String userId);
 //    Page<Transaction> findByUserId(@RequestParam("user_id") String userId, Pageable pageable);
 //
 //    Page<Transaction> findByBookId(@RequestParam("book_id") String bookId, Pageable pageable);

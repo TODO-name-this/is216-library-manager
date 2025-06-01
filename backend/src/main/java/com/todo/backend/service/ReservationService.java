@@ -60,10 +60,13 @@ public class ReservationService {
         }
 
         return reservationMapper.toResponseDto(reservation);
+    }    public List<ResponseReservationDto> getAllReservations() {
+        List<Reservation> reservations = reservationRepository.findAll();
+        return reservationMapper.toResponseDtoList(reservations);
     }
 
-    public List<ResponseReservationDto> getAllReservations() {
-        List<Reservation> reservations = reservationRepository.findAll();
+    public List<ResponseReservationDto> getReservationsByUserId(String userId) {
+        List<Reservation> reservations = reservationRepository.findByUserId(userId);
         return reservationMapper.toResponseDtoList(reservations);
     }
 
