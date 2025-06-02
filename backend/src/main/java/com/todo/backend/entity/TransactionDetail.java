@@ -26,6 +26,9 @@ public class TransactionDetail {
     @Column(name = "PENALTY_FEE")
     private int penaltyFee;
 
+    @Column(name = "DESCRIPTION")
+    private String description;
+
     // Relationship with Transaction
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)

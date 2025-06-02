@@ -135,6 +135,7 @@ CREATE TABLE `TRANSACTION_DETAIL` (
   `BOOK_COPY_ID` varchar(36) NOT NULL,
   `RETURNED_DATE` date DEFAULT NULL,
   `PENALTY_FEE` bigint NOT NULL DEFAULT 0,
+  `DESCRIPTION` text DEFAULT NULL,
   PRIMARY KEY (`TRANSACTION_ID`, `BOOK_COPY_ID`),
   KEY `FK_TRANSACTION_DETAIL_BOOK_COPY` (`BOOK_COPY_ID`),
   KEY `FK_TRANSACTION_DETAIL_TRANSACTION` (`TRANSACTION_ID`),
@@ -452,23 +453,23 @@ INSERT INTO `TRANSACTION` (`ID`, `USER_ID`, `BORROW_DATE`, `DUE_DATE`) VALUES
 ('t8', 'u3', '2023-02-05', '2023-02-19');
 
 -- 11 Insert Transaction Details
-INSERT INTO `TRANSACTION_DETAIL` (`TRANSACTION_ID`, `BOOK_COPY_ID`, `RETURNED_DATE`, `PENALTY_FEE`) VALUES
-('t1', 'bc1-1', NULL, 0),
-('t1', 'bc2-1', NULL, 0),
-('t2', 'bc3-1', NULL, 0),
-('t2', 'bc4-1', NULL, 0),
-('t3', 'bc5-1', NULL, 0),
-('t3', 'bc6-1', NULL, 0),
-('t4', 'bc7-1', NULL, 0),
-('t4', 'bc8-1', NULL, 0),
-('t5', 'bc9-1', NULL, 0),
-('t5', 'bc10-1', NULL, 0),
-('t6', 'bc11-1', NULL, 0),
-('t6', 'bc12-1', NULL, 0),
-('t7', 'bc13-1', NULL, 0),
-('t7', 'bc14-1', NULL, 0),
-('t8', 'bc15-1', NULL, 0),
-('t8', 'bc16-1', NULL, 0);
+INSERT INTO `TRANSACTION_DETAIL` (`TRANSACTION_ID`, `BOOK_COPY_ID`, `RETURNED_DATE`, `PENALTY_FEE`, `DESCRIPTION`) VALUES
+('t1', 'bc1-1', NULL, 0, NULL),
+('t1', 'bc2-1', NULL, 0, NULL),
+('t2', 'bc3-1', NULL, 0, NULL),
+('t2', 'bc4-1', NULL, 0, NULL),
+('t3', 'bc5-1', NULL, 0, NULL),
+('t3', 'bc6-1', NULL, 0, NULL),
+('t4', 'bc7-1', NULL, 0, NULL),
+('t4', 'bc8-1', NULL, 0, NULL),
+('t5', 'bc9-1', NULL, 0, NULL),
+('t5', 'bc10-1', NULL, 0, NULL),
+('t6', 'bc11-1', NULL, 0, NULL),
+('t6', 'bc12-1', NULL, 0, NULL),
+('t7', 'bc13-1', NULL, 0, NULL),
+('t7', 'bc14-1', NULL, 0, NULL),
+('t8', 'bc15-1', NULL, 0, NULL),
+('t8', 'bc16-1', NULL, 0, NULL);
 
 -- 12 Insert Reservations
 INSERT INTO `RESERVATION` (`ID`, `USER_ID`, `BOOK_TITLE_ID`, `BOOK_COPY_ID`, `RESERVATION_DATE`, `EXPIRATION_DATE`, `STATUS`) VALUES

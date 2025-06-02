@@ -21,6 +21,9 @@ public class BookCopy {
     @Column(name = "STATUS")
     private String status;
 
+    @Column(name = "CONDITION")
+    private String condition; // NEW, GOOD, WORN, DAMAGED
+
     // Relationship with BookTitle
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)

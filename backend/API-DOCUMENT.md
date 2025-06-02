@@ -1081,7 +1081,7 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
 **GET** `/api/bookCopy`
 
 -   **Roles:** ADMIN, LIBRARIAN
--   **Description:** Retrieve all book copies in the system
+-   **Description:** Retrieve all book copies in the system with detailed information including book title, borrower details, and status
 -   **Response Example:**
 
 ```json
@@ -1090,17 +1090,34 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
         "id": "BC001",
         "bookTitleId": "BT001",
         "status": "AVAILABLE",
-        "condition": "GOOD",
-        "location": "A1-001",
-        "bookCopyIds": ["BC001"]
+        "bookTitle": "Effective Java",
+        "bookPhotoUrl": "https://example.com/effective-java.jpg",
+        "bookPrice": 450000,
+        "borrowerCccd": null,
+        "borrowerName": null,
+        "borrowerId": null
     },
     {
         "id": "BC002",
         "bookTitleId": "BT001",
         "status": "BORROWED",
-        "condition": "GOOD",
-        "location": "A1-002",
-        "bookCopyIds": ["BC002"]
+        "bookTitle": "Effective Java",
+        "bookPhotoUrl": "https://example.com/effective-java.jpg",
+        "bookPrice": 450000,
+        "borrowerCccd": "123456789012",
+        "borrowerName": "Nguyễn Văn An",
+        "borrowerId": "U001"
+    },
+    {
+        "id": "BC003",
+        "bookTitleId": "BT001",
+        "status": "RESERVED",
+        "bookTitle": "Effective Java",
+        "bookPhotoUrl": "https://example.com/effective-java.jpg",
+        "bookPrice": 450000,
+        "borrowerCccd": "987654321098",
+        "borrowerName": "Trần Thị Bình",
+        "borrowerId": "U002"
     }
 ]
 ```
@@ -1110,17 +1127,52 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
 **GET** `/api/bookCopy/{id}`
 
 -   **Roles:** ADMIN, LIBRARIAN
--   **Description:** Retrieve detailed information about a specific book copy
--   **Response Example:**
+-   **Description:** Retrieve detailed information about a specific book copy including book title, borrower details, and status
+-   **Response Example (Available Book):**
 
 ```json
 {
     "id": "BC001",
     "bookTitleId": "BT001",
     "status": "AVAILABLE",
-    "condition": "GOOD",
-    "location": "A1-001",
-    "bookCopyIds": ["BC001"]
+    "bookTitle": "Effective Java",
+    "bookPhotoUrl": "https://example.com/effective-java.jpg",
+    "bookPrice": 450000,
+    "borrowerCccd": null,
+    "borrowerName": null,
+    "borrowerId": null
+}
+```
+
+-   **Response Example (Borrowed Book):**
+
+```json
+{
+    "id": "BC002",
+    "bookTitleId": "BT001",
+    "status": "BORROWED",
+    "bookTitle": "Effective Java",
+    "bookPhotoUrl": "https://example.com/effective-java.jpg",
+    "bookPrice": 450000,
+    "borrowerCccd": "123456789012",
+    "borrowerName": "Nguyễn Văn An",
+    "borrowerId": "U001"
+}
+```
+
+-   **Response Example (Reserved Book):**
+
+```json
+{
+    "id": "BC003",
+    "bookTitleId": "BT001",
+    "status": "RESERVED",
+    "bookTitle": "Effective Java",
+    "bookPhotoUrl": "https://example.com/effective-java.jpg",
+    "bookPrice": 450000,
+    "borrowerCccd": "987654321098",
+    "borrowerName": "Trần Thị Bình",
+    "borrowerId": "U002"
 }
 ```
 

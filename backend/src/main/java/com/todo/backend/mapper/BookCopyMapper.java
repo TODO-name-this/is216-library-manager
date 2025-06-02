@@ -17,7 +17,12 @@ public interface BookCopyMapper {
     @Mapping(target = "id", ignore = true)
     void updateEntityFromDto(BookCopyDto bookCopyDto, @MappingTarget BookCopy bookCopy);
 
-    @Mapping(target = "bookCopyIds", ignore = true)
+    @Mapping(target = "bookTitle", ignore = true)
+    @Mapping(target = "bookPhotoUrl", ignore = true)
+    @Mapping(target = "bookPrice", ignore = true)
+    @Mapping(target = "borrowerCccd", ignore = true)
+    @Mapping(target = "borrowerName", ignore = true)
+    @Mapping(target = "borrowerId", ignore = true)
     ResponseBookCopyDto toResponseDto(BookCopy bookCopy);
     List<ResponseBookCopyDto> toResponseDtoList(List<BookCopy> bookCopies);
 }

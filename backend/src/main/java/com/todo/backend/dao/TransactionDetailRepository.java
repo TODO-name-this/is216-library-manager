@@ -14,4 +14,7 @@ public interface TransactionDetailRepository extends JpaRepository<TransactionDe
 
     List<TransactionDetail> findByTransactionId(String transactionId);
     TransactionDetail findByTransactionIdAndBookCopyId(String transactionId, String bookCopyId);
+    
+    @Query("SELECT td FROM TransactionDetail td WHERE td.bookCopyId = :bookCopyId AND td.returnedDate IS NULL")
+    List<TransactionDetail> findByBookCopyIdAndNotReturned(String bookCopyId);
 }
