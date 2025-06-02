@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.List;
+
 @RepositoryRestResource(exported = false)
 public interface BookCopyRepository extends JpaRepository<BookCopy, String> {
 
@@ -18,4 +20,6 @@ public interface BookCopyRepository extends JpaRepository<BookCopy, String> {
     Page<BookCopy> findByBookTitleIdAndStatus(@RequestParam("bookTitleId") String bookTitleId, @RequestParam("status") String status, Pageable pageable);
 
     BookCopy findFirstByBookTitleIdAndStatus(String bookTitleId, String status);
+    
+    List<BookCopy> findByBookTitleId(String bookTitleId);
 }

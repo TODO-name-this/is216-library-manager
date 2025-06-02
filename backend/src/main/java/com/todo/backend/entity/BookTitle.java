@@ -28,11 +28,19 @@ public class BookTitle {
     @Column(name = "CAN_BORROW")
     private boolean canBorrow;
 
-    @Column(name = "PUBLISHED_DATE")
-    private LocalDate publishedDate;
+    @Column(name = "PRICE")
+    private int price;
 
-    @Column(name = "PUBLISHER_ID")
+    @Column(name = "PUBLISHED_DATE")
+    private LocalDate publishedDate;    @Column(name = "PUBLISHER_ID")
     private String publisherId;
+
+    // Inventory Management Fields
+    @Column(name = "TOTAL_COPIES")
+    private int totalCopies;
+
+    @Column(name = "MAX_ONLINE_RESERVATIONS")
+    private int maxOnlineReservations;
 
     // Relationship with Publisher
     @JsonIgnore

@@ -67,8 +67,11 @@ CREATE TABLE `BOOK_TITLE` (
   `TITLE` varchar(255) NOT NULL,
   `ISBN` varchar(50) DEFAULT NULL,
   `CAN_BORROW` BOOLEAN NOT NULL DEFAULT TRUE,
+  `PRICE` INT NOT NULL DEFAULT 0,
   `PUBLISHED_DATE` date DEFAULT NULL,
   `PUBLISHER_ID` varchar(36) DEFAULT NULL,
+  `TOTAL_COPIES` INT NOT NULL DEFAULT 0,
+  `MAX_ONLINE_RESERVATIONS` INT NOT NULL DEFAULT 0,
   UNIQUE KEY `UK_ISBN` (`ISBN`),
   PRIMARY KEY (`ID`),
   KEY `FK_BOOK_TITLE_PUBLISHER` (`PUBLISHER_ID`),
@@ -143,7 +146,7 @@ CREATE TABLE `RESERVATION` (
   `ID` varchar(36) NOT NULL,
   `USER_ID` varchar(36) NOT NULL,
   `BOOK_TITLE_ID` varchar(36) NOT NULL,
-  `BOOK_COPY_ID` varchar(36) NOT NULL,
+  `BOOK_COPY_ID` varchar(36) DEFAULT NULL,
   `RESERVATION_DATE` date NOT NULL,
   `EXPIRATION_DATE` date NOT NULL,
   `STATUS` varchar(50) NOT NULL DEFAULT 'PENDING',
@@ -176,66 +179,66 @@ INSERT INTO `PUBLISHER` (`ID`, `NAME`, `ADDRESS`, `EMAIL`, `PHONE`) VALUES
 ('p6', 'Wiley', 'Hoboken, NJ, USA', 'info@wiley.com', '201-748-6000');
 
 -- 3. Insert Authors
-INSERT INTO `AUTHOR` (`ID`, `NAME`, `BIOGRAPHY`) VALUES
-('a1', 'TS. Lê Minh Toàn', 'Tiến sĩ Luật học, giảng viên đại học tại Việt Nam'),
-('a2', 'PGS.TS. Phạm Văn Đức', 'Phó Giáo sư, Tiến sĩ, chuyên gia về triết học Mác - Lênin'),
-('a3', 'Bộ Giáo dục và Đào tạo', 'Cơ quan quản lý nhà nước về giáo dục tại Việt Nam'),
-('a4', 'Robert C. Martin', 'Software engineer and author, known for promoting agile software development and software craftsmanship'),
-('a5', 'Kyle Simpson', 'JavaScript developer, author of the "You Don\'t Know JS" book series'),
-('a6', 'Erich Gamma', 'Software engineer, one of the Gang of Four authors'),
-('a7', 'Richard Helm', 'Software engineer, one of the Gang of Four authors'),
-('a8', 'Ralph Johnson', 'Software engineer, one of the Gang of Four authors'),
-('a9', 'John Vlissides', 'Software engineer, one of the "Gang of Four" authors'),
-('a10', 'Douglas Crockford', 'Creator of JSON and JavaScript expert'),
-('a11', 'Steve Krug', 'Usability expert and author'),
-('a12', 'Andrew Hunt', 'Co-founder of the Pragmatic Programmers'),
-('a13', 'David Thomas', 'Co-founder of the Pragmatic Programmers'),
-('a14', 'Martin Fowler', 'Software engineer and author specializing in software design'),
-('a15', 'Marijn Haverbeke', 'JavaScript programmer and author'),
-('a16', 'Jon Duckett', 'Author of web development books'),
-('a17', 'Alex Banks', 'Software engineer and author'),
-('a18', 'Eve Porcello', 'Software engineer and author'),
-('a19', 'Aditya Bhargava', 'Software engineer and author'),
-('a20', 'Martin Kleppmann', 'Software engineer and researcher'),
-('a21', 'Joel Marsh', 'UX designer and author'),
-('a22', 'Eric Freeman', 'Author and software engineer'),
-('a23', 'Elisabeth Robson', 'Author and software engineer'),
-('a24', 'Luciano Ramalho', 'Python developer and author'),
-('a25', 'Rex Hartson', 'Professor of Computer Science and author on UX'),
-('a26', 'Pardha Pyla', 'Professor and author on UX'),
-('a27', 'Craig Walls', 'Spring Framework specialist and author'),
-('a28', 'Dmitry Jemerov', 'Kotlin developer and author'),
-('a29', 'Svetlana Isakova', 'Kotlin developer and author'),
-('a30', 'Lea Verou', 'Web developer, speaker, and author'),
-('a31', 'Eric Matthes', 'Author and Python teacher');
+INSERT INTO `AUTHOR` (`ID`, `NAME`, `BIRTHDAY`, `BIOGRAPHY`) VALUES
+('a1', 'TS. Lê Minh Toàn', '1975-03-15', 'Tiến sĩ Luật học, giảng viên đại học tại Việt Nam'),
+('a2', 'PGS.TS. Phạm Văn Đức', '1970-08-22', 'Phó Giáo sư, Tiến sĩ, chuyên gia về triết học Mác - Lênin'),
+('a3', 'Bộ Giáo dục và Đào tạo', '1945-09-02', 'Cơ quan quản lý nhà nước về giáo dục tại Việt Nam'),
+('a4', 'Robert C. Martin', '1952-12-05', 'Software engineer and author, known for promoting agile software development and software craftsmanship'),
+('a5', 'Kyle Simpson', '1979-07-18', 'JavaScript developer, author of the "You Don\'t Know JS" book series'),
+('a6', 'Erich Gamma', '1961-03-13', 'Software engineer, one of the Gang of Four authors'),
+('a7', 'Richard Helm', '1956-11-27', 'Software engineer, one of the Gang of Four authors'),
+('a8', 'Ralph Johnson', '1955-06-30', 'Software engineer, one of the Gang of Four authors'),
+('a9', 'John Vlissides', '1961-08-02', 'Software engineer, one of the "Gang of Four" authors'),
+('a10', 'Douglas Crockford', '1955-02-12', 'Creator of JSON and JavaScript expert'),
+('a11', 'Steve Krug', '1950-04-25', 'Usability expert and author'),
+('a12', 'Andrew Hunt', '1964-10-14', 'Co-founder of the Pragmatic Programmers'),
+('a13', 'David Thomas', '1956-01-19', 'Co-founder of the Pragmatic Programmers'),
+('a14', 'Martin Fowler', '1963-12-18', 'Software engineer and author specializing in software design'),
+('a15', 'Marijn Haverbeke', '1989-05-03', 'JavaScript programmer and author'),
+('a16', 'Jon Duckett', '1971-09-12', 'Author of web development books'),
+('a17', 'Alex Banks', '1983-11-08', 'Software engineer and author'),
+('a18', 'Eve Porcello', '1985-07-24', 'Software engineer and author'),
+('a19', 'Aditya Bhargava', '1987-02-16', 'Software engineer and author'),
+('a20', 'Martin Kleppmann', '1981-04-09', 'Software engineer and researcher'),
+('a21', 'Joel Marsh', '1978-12-31', 'UX designer and author'),
+('a22', 'Eric Freeman', '1965-06-15', 'Author and software engineer'),
+('a23', 'Elisabeth Robson', '1968-03-20', 'Author and software engineer'),
+('a24', 'Luciano Ramalho', '1960-11-07', 'Python developer and author'),
+('a25', 'Rex Hartson', '1958-08-14', 'Professor of Computer Science and author on UX'),
+('a26', 'Pardha Pyla', '1975-01-28', 'Professor and author on UX'),
+('a27', 'Craig Walls', '1970-05-11', 'Spring Framework specialist and author'),
+('a28', 'Dmitry Jemerov', '1982-09-03', 'Kotlin developer and author'),
+('a29', 'Svetlana Isakova', '1985-12-19', 'Kotlin developer and author'),
+('a30', 'Lea Verou', '1986-06-26', 'Web developer, speaker, and author'),
+('a31', 'Eric Matthes', '1975-10-17', 'Author and Python teacher');
 
 -- 4. Insert BookTitles
-INSERT INTO `BOOK_TITLE` (`ID`, `IMAGE_URL`, `TITLE`, `ISBN`, `PUBLISHED_DATE`, `PUBLISHER_ID`) VALUES
-('b1', 'https://www.nxbctqg.org.vn/img_data/images/709508658395_169686323_466117254736983_3540351537507976746_n.jpg', 'Pháp luật đại cương', '978-604-57-5825-8', '2020-01-01', 'p1'),
-('b2', 'https://nxbctqg.org.vn/img_data/images/773528504979_mllkc.jpg', 'Giáo trình triết học Mác - Lê Nin', '978-604-57-5826-5', '2020-01-01', 'p1'),
-('b3', 'https://nxbctqg.org.vn/img_data/images/316029535454_KHONG-CHUYEN.jpg', 'Tư tưởng Hồ Chí Minh', '978-604-57-5827-2', '1999-09-12', 'p1'),
-('b4', 'https://nxbctqg.org.vn/img_data/images/036272640018_b1.jpg', 'Kinh tế chính trị Mác Lê Nin', '978-604-57-5828-9', '1989-02-01', 'p1'),
-('b5', 'https://nxbctqg.org.vn/img_data/images/326523824123_b1.jpg', 'Chủ nghĩa xã hội khoa học', '978-604-57-5829-6', '2005-02-22', 'p1'),
-('b6', 'https://m.media-amazon.com/images/I/41-sN-mzwKL.jpg', 'Clean Code', '978-0132350884', '1999-01-10', 'p4'),
-('b7', 'https://m.media-amazon.com/images/I/51O-cX8IcDL.jpg', 'You Don\'t Know JS: Scope & Closures', '978-1449335588', '2020-12-01', 'p2'),
-('b8', 'https://m.media-amazon.com/images/I/51k5cA3Yv3L.jpg', 'Design Patterns', '978-0201633610', '2022-09-14', 'p4'),
-('b9', 'https://m.media-amazon.com/images/I/51gdDmGRc1L.jpg', 'JavaScript: The Good Parts', '978-0596517748', '1987-05-23', 'p2'),
-('b10', 'https://m.media-amazon.com/images/I/41SH-SvWPxL.jpg', 'Don\'t Make Me Think', '978-0321965516', '2020-01-14', 'p5'),
-('b11', 'https://m.media-amazon.com/images/I/41as+WafrFL.jpg', 'The Pragmatic Programmer', '978-0201616224', '1778-02-03', 'p4'),
-('b12', 'https://m.media-amazon.com/images/I/51kLjsos7eL.jpg', 'Refactoring', '978-0134757599', '2012-08-12', 'p4'),
-('b13', 'https://m.media-amazon.com/images/I/91asIC1fRwL.jpg', 'Eloquent JavaScript', '978-1593279509', '2020-08-05', 'p5'),
-('b14', 'https://m.media-amazon.com/images/I/41+eA4F7GPL.jpg', 'HTML and CSS: Design and Build Websites', '978-1118008188', '2020-07-22', 'p6'),
-('b15', 'https://m.media-amazon.com/images/I/51JpH5yPffL.jpg', 'Learning React', '978-1492051725', '1991-11-11', 'p2'),
-('b16', 'https://m.media-amazon.com/images/I/61u6oaU6oFL.jpg', 'Grokking Algorithms', '978-1617292231', '2023-06-20', 'p3'),
-('b17', 'https://m.media-amazon.com/images/I/41D5rfQnQBL.jpg', 'Designing Data-Intensive Applications', '978-1449373320', '1888-04-01', 'p2'),
-('b18', 'https://m.media-amazon.com/images/I/71GucMfsX2L.jpg', 'UX for Beginners', '978-1491912683', '2020-01-26', 'p2'),
-('b19', 'https://m.media-amazon.com/images/I/81vjDV8Z2hL.jpg', 'Head First Design Patterns', '978-0596007126', '1876-08-09', 'p2'),
-('b20', 'https://m.media-amazon.com/images/I/51cUVaBWZ0L.jpg', 'Fluent Python', '978-1491946008', '1882-12-01', 'p2'),
-('b21', 'https://m.media-amazon.com/images/I/41cKAY88zSL.jpg', 'The UX Book', '978-0123852410', '1881-12-30', 'p4'),
-('b22', 'https://m.media-amazon.com/images/I/51Fg0sbL6BL.jpg', 'Spring in Action', '978-1617294945', '1919-04-05', 'p3'),
-('b23', 'https://m.media-amazon.com/images/I/51fgdlGZlnL.jpg', 'Kotlin in Action', '978-1617293290', '2020-10-06', 'p3'),
-('b24', 'https://m.media-amazon.com/images/I/41x6Ofq71dL.jpg', 'CSS Secrets', '978-1449372637', '1993-01-21', 'p2'),
-('b25', 'https://m.media-amazon.com/images/I/51Fkt1hdOUL.jpg', 'Python Crash Course', '978-1593276034', '1999-01-01', 'p5');
+INSERT INTO `BOOK_TITLE` (`ID`, `IMAGE_URL`, `TITLE`, `ISBN`, `PRICE`, `PUBLISHED_DATE`, `PUBLISHER_ID`, `TOTAL_COPIES`, `MAX_ONLINE_RESERVATIONS`) VALUES
+('b1', 'https://www.nxbctqg.org.vn/img_data/images/709508658395_169686323_466117254736983_3540351537507976746_n.jpg', 'Pháp luật đại cương', '978-604-57-5825-8', 85000, '2020-01-01', 'p1', 3, 2),
+('b2', 'https://nxbctqg.org.vn/img_data/images/773528504979_mllkc.jpg', 'Giáo trình triết học Mác - Lê Nin', '978-604-57-5826-5', 95000, '2020-01-01', 'p1', 3, 2),
+('b3', 'https://nxbctqg.org.vn/img_data/images/316029535454_KHONG-CHUYEN.jpg', 'Tư tưởng Hồ Chí Minh', '978-604-57-5827-2', 75000, '1999-09-12', 'p1', 3, 2),
+('b4', 'https://nxbctqg.org.vn/img_data/images/036272640018_b1.jpg', 'Kinh tế chính trị Mác Lê Nin', '978-604-57-5828-9', 88000, '1989-02-01', 'p1', 3, 2),
+('b5', 'https://nxbctqg.org.vn/img_data/images/326523824123_b1.jpg', 'Chủ nghĩa xã hội khoa học', '978-604-57-5829-6', 82000, '2005-02-22', 'p1', 3, 2),
+('b6', 'https://m.media-amazon.com/images/I/41-sN-mzwKL.jpg', 'Clean Code', '978-0132350884', 450000, '1999-01-10', 'p4', 5, 3),
+('b7', 'https://m.media-amazon.com/images/I/51O-cX8IcDL.jpg', 'You Don\'t Know JS: Scope & Closures', '978-1449335588', 320000, '2020-12-01', 'p2', 4, 3),
+('b8', 'https://m.media-amazon.com/images/I/51k5cA3Yv3L.jpg', 'Design Patterns', '978-0201633610', 580000, '2022-09-14', 'p4', 4, 3),
+('b9', 'https://m.media-amazon.com/images/I/51gdDmGRc1L.jpg', 'JavaScript: The Good Parts', '978-0596517748', 295000, '1987-05-23', 'p2', 4, 3),
+('b10', 'https://m.media-amazon.com/images/I/41SH-SvWPxL.jpg', 'Don\'t Make Me Think', '978-0321965516', 415000, '2020-01-14', 'p5', 3, 2),
+('b11', 'https://m.media-amazon.com/images/I/41as+WafrFL.jpg', 'The Pragmatic Programmer', '978-0201616224', 495000, '1778-02-03', 'p4', 5, 4),
+('b12', 'https://m.media-amazon.com/images/I/51kLjsos7eL.jpg', 'Refactoring', '978-0134757599', 540000, '2012-08-12', 'p4', 4, 3),
+('b13', 'https://m.media-amazon.com/images/I/91asIC1fRwL.jpg', 'Eloquent JavaScript', '978-1593279509', 380000, '2020-08-05', 'p5', 4, 3),
+('b14', 'https://m.media-amazon.com/images/I/41+eA4F7GPL.jpg', 'HTML and CSS: Design and Build Websites', '978-1118008188', 355000, '2020-07-22', 'p6', 3, 2),
+('b15', 'https://m.media-amazon.com/images/I/51JpH5yPffL.jpg', 'Learning React', '978-1492051725', 435000, '1991-11-11', 'p2', 4, 3),
+('b16', 'https://m.media-amazon.com/images/I/61u6oaU6oFL.jpg', 'Grokking Algorithms', '978-1617292231', 395000, '2023-06-20', 'p3', 3, 2),
+('b17', 'https://m.media-amazon.com/images/I/41D5rfQnQBL.jpg', 'Designing Data-Intensive Applications', '978-1449373320', 620000, '1888-04-01', 'p2', 2, 1),
+('b18', 'https://m.media-amazon.com/images/I/71GucMfsX2L.jpg', 'UX for Beginners', '978-1491912683', 310000, '2020-01-26', 'p2', 3, 2),
+('b19', 'https://m.media-amazon.com/images/I/81vjDV8Z2hL.jpg', 'Head First Design Patterns', '978-0596007126', 485000, '1876-08-09', 'p2', 4, 3),
+('b20', 'https://m.media-amazon.com/images/I/51cUVaBWZ0L.jpg', 'Fluent Python', '978-1491946008', 525000, '1882-12-01', 'p2', 3, 2),
+('b21', 'https://m.media-amazon.com/images/I/41cKAY88zSL.jpg', 'The UX Book', '978-0123852410', 675000, '1881-12-30', 'p4', 2, 1),
+('b22', 'https://m.media-amazon.com/images/I/51Fg0sbL6BL.jpg', 'Spring in Action', '978-1617294945', 465000, '1919-04-05', 'p3', 4, 3),
+('b23', 'https://m.media-amazon.com/images/I/51fgdlGZlnL.jpg', 'Kotlin in Action', '978-1617293290', 410000, '2020-10-06', 'p3', 3, 2),
+('b24', 'https://m.media-amazon.com/images/I/41x6Ofq71dL.jpg', 'CSS Secrets', '978-1449372637', 365000, '1993-01-21', 'p2', 3, 2),
+('b25', 'https://m.media-amazon.com/images/I/51Fkt1hdOUL.jpg', 'Python Crash Course', '978-1593276034', 335000, '1999-01-01', 'p5', 4, 3);
 
 -- 5. Insert Book Copies
 INSERT INTO `BOOK_COPY` (`ID`, `BOOK_TITLE_ID`, `STATUS`) VALUES
@@ -414,15 +417,15 @@ INSERT INTO `BOOK_CATEGORY` (`BOOK_TITLE_ID`, `CATEGORY_ID`) VALUES
 ('b25', 'c4');
 
 -- 8. Insert Users
-INSERT INTO `USER` (`ID`, `NAME`, `CCCD`, `DOB`, `EMAIL`, `PASSWORD`, `ROLE`)VALUES
+INSERT INTO `USER` (`ID`, `NAME`, `CCCD`, `DOB`, `EMAIL`, `PASSWORD`, `ROLE`, `BALANCE`)VALUES
 -- password is password
-('u1', 'Admin', '012345678901', '2005-12-22', 'admin@library.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'ADMIN'),
-('u2', 'John Doe', '012345678902', '2001-02-12', 'john@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'LIBRARIAN'),
-('u3', 'Jane Smith', '012345678903', '2000-01-01', 'jane@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'USER'),
-('u4', 'Bob Johnson', '012345678904', '1998-05-11', 'bob@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
-('u5', 'Alice Williams', '012345678905', '2003-09-14', 'alice@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
-('u6', 'Michael Brown', '012345678906', '2005-09-14', 'michael@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER'),
-('u7', 'Emily Davis', '012345678907', '2008-11-25', 'emily@example.com', '$2a$10$3zTioNki9RCK4G7g3MUO9eg2q2rUApe2Usrqx9rIKrW9e0XcmYKSe', 'USER');
+('u1', 'Admin', '012345678901', '2005-12-22', 'admin@library.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'ADMIN', 0),
+('u2', 'John Doe', '012345678902', '2001-02-12', 'john@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'LIBRARIAN', 0),
+('u3', 'Jane Smith', '012345678903', '2000-01-01', 'jane@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'USER', 3500000),
+('u4', 'Bob Johnson', '012345678904', '1998-05-11', 'bob@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'USER', 7200000),
+('u5', 'Alice Williams', '012345678905', '2003-09-14', 'alice@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'USER', 1800000),
+('u6', 'Michael Brown', '012345678906', '2005-09-14', 'michael@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'USER', 5500000),
+('u7', 'Emily Davis', '012345678907', '2008-11-25', 'emily@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'USER', 2750000);
 
 -- 9. Insert Reviews
 INSERT INTO `REVIEW` (`ID`, `USER_ID`, `BOOK_TITLE_ID`, `STAR`, `COMMENT`, `DATE`) VALUES
@@ -471,11 +474,11 @@ INSERT INTO `TRANSACTION_DETAIL` (`TRANSACTION_ID`, `BOOK_COPY_ID`, `RETURNED_DA
 INSERT INTO `RESERVATION` (`ID`, `USER_ID`, `BOOK_TITLE_ID`, `BOOK_COPY_ID`, `RESERVATION_DATE`, `EXPIRATION_DATE`, `STATUS`) VALUES
 ('res1', 'u2', 'b21', 'bc21-2' ,'2023-03-15', '2023-03-22', 'COMPLETED'),
 ('res2', 'u3', 'b22', 'bc22-2','2023-03-16', '2023-03-23', 'COMPLETED'),
-('res3', 'u4', 'b23', 'bc23-2','2023-03-17', '2023-03-24', 'PENDING'),
-('res4', 'u5', 'b24', 'bc24-2','2023-03-18', '2023-03-25', 'PENDING'),
+('res3', 'u4', 'b23', NULL,'2023-03-17', '2023-03-24', 'PENDING'),
+('res4', 'u5', 'b24', NULL,'2023-03-18', '2023-03-25', 'PENDING'),
 ('res5', 'u6', 'b25', 'bc25-2','2023-03-19', '2023-03-26', 'CANCELLED'),
-('res6', 'u7', 'b1', 'bc1-2','2023-03-20', '2023-03-27', 'PENDING'),
-('res7', 'u2', 'b2', 'bc2-2','2023-03-21', '2023-03-28', 'PENDING');
+('res6', 'u7', 'b1', NULL,'2023-03-20', '2023-03-27', 'PENDING'),
+('res7', 'u2', 'b2', NULL,'2023-03-21', '2023-03-28', 'PENDING');
 
 
 

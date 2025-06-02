@@ -3,6 +3,7 @@ package com.todo.backend.service;
 import com.todo.backend.dao.BookCopyRepository;
 import com.todo.backend.dao.TransactionDetailRepository;
 import com.todo.backend.dao.TransactionRepository;
+import com.todo.backend.dao.UserRepository;
 import com.todo.backend.dto.transaction.DamagedBookCopyDto;
 import com.todo.backend.dto.transaction.CreateTransactionDto;
 import com.todo.backend.dto.transaction.ResponseTransactionDto;
@@ -11,6 +12,7 @@ import com.todo.backend.dto.transactiondetail.ResponseTransactionDetailDto;
 import com.todo.backend.entity.BookCopy;
 import com.todo.backend.entity.Transaction;
 import com.todo.backend.entity.TransactionDetail;
+import com.todo.backend.entity.User;
 import com.todo.backend.mapper.TransactionDetailMapper;
 import com.todo.backend.mapper.TransactionMapper;
 import jakarta.transaction.Transactional;
@@ -26,13 +28,15 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final TransactionDetailRepository transactionDetailRepository;
     private final BookCopyRepository bookCopyRepository;
+    private final UserRepository userRepository;
     private final TransactionMapper transactionMapper;
     private final TransactionDetailMapper transactionDetailMapper;
 
-    public TransactionService(TransactionRepository transactionRepository, TransactionDetailRepository transactionDetailRepository, BookCopyRepository bookCopyRepository, TransactionMapper transactionMapper, TransactionDetailMapper transactionDetailMapper) {
+    public TransactionService(TransactionRepository transactionRepository, TransactionDetailRepository transactionDetailRepository, BookCopyRepository bookCopyRepository, UserRepository userRepository, TransactionMapper transactionMapper, TransactionDetailMapper transactionDetailMapper) {
         this.transactionRepository = transactionRepository;
         this.transactionDetailRepository = transactionDetailRepository;
         this.bookCopyRepository = bookCopyRepository;
+        this.userRepository = userRepository;
         this.transactionMapper = transactionMapper;
         this.transactionDetailMapper = transactionDetailMapper;
     }
@@ -106,6 +110,22 @@ public class TransactionService {
             throw new RuntimeException("User can only borrow 5 books at a time");
         }
 
+        // Validate user balance before allowing transaction
+        User user = userRepository.findById(transaction.getUserId())
+                .orElseThrow(() -> new RuntimeException("User with ID " + transaction.getUserId() + " not found"));
+        
+        int totalPrice = 0;
+        for (String bookCopyId : bookCopyIds) {
+            BookCopy bookCopy = bookCopyRepository.findById(bookCopyId)
+                    .orElseThrow(() -> new RuntimeException("BookCopy with ID " + bookCopyId + " not found"));
+            totalPrice += bookCopy.getBookTitle().getPrice();
+        }
+        
+        if (user.getBalance() < totalPrice) {
+            throw new RuntimeException(String.format("Insufficient balance. Required: %,d VND, Available: %,d VND", 
+                    totalPrice, user.getBalance()));
+        }
+
         // Check if all books are available, only one book copy per book title is allowed,
         // and book title can be borrowed
         List<String> allBookTitles = new ArrayList<>(unreturnedBookTitleIds);
@@ -148,6 +168,10 @@ public class TransactionService {
         transaction.setTransactionDetails(details);
         transactionRepository.save(transaction);
 
+        // Deduct the total price from user's balance
+        user.setBalance(user.getBalance() - totalPrice);
+        userRepository.save(user);
+
         List<ResponseTransactionDetailDto> responseDetails = details.stream()
                 .map(transactionDetailMapper::toResponseDto)
                 .toList();
@@ -184,6 +208,12 @@ public class TransactionService {
         }
 
         List<TransactionDetail> details = new ArrayList<>();
+        
+        // Get user for balance updates
+        User user = userRepository.findById(existingTransaction.getUserId())
+                .orElseThrow(() -> new RuntimeException("User with ID " + existingTransaction.getUserId() + " not found"));
+        
+        int refundAmount = 0;
 
         // Update returned book copies
         for (String bookCopyId : returnedBookCopyIds) {
@@ -195,6 +225,9 @@ public class TransactionService {
             BookCopy bookCopy = bookCopyRepository.findById(bookCopyId)
                     .orElseThrow(() -> new RuntimeException("BookCopy with ID " + bookCopyId + " not found"));
             bookCopy.setStatus("AVAILABLE");
+            
+            // Add to refund amount for properly returned books
+            refundAmount += bookCopy.getBookTitle().getPrice();
 
             TransactionDetail transactionDetail = new TransactionDetail();
             transactionDetail.setTransactionId(existingTransaction.getId());
@@ -236,6 +269,11 @@ public class TransactionService {
         existingTransaction.getTransactionDetails().clear();
         existingTransaction.getTransactionDetails().addAll(details);
         transactionRepository.save(existingTransaction);
+          // Refund user balance for properly returned books
+        if (refundAmount > 0) {
+            user.setBalance(user.getBalance() + refundAmount);
+            userRepository.save(user);
+        }
 
         List<ResponseTransactionDetailDto> responseDetails = details.stream()
                 .map(transactionDetailMapper::toResponseDto)

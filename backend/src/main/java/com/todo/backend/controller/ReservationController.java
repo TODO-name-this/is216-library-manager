@@ -117,4 +117,16 @@ public class ReservationController {
             return ResponseEntity.status(500).body("Error fetching user reservations: " + e.getMessage());
         }
     }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN', 'USER')")
+    @PostMapping("/{id}/assign-copy")
+    public ResponseEntity<?> assignBookCopyToReservation(@PathVariable String id, Authentication authentication) {
+        try {
+            String userId = authentication.getName();
+            ResponseReservationDto updatedReservation = reservationService.assignBookCopyToReservation(id, userId);
+            return ResponseEntity.ok(updatedReservation);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error assigning book copy: " + e.getMessage());
+        }
+    }
 }

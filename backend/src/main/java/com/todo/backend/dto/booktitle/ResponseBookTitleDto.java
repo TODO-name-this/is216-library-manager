@@ -15,14 +15,25 @@ public class ResponseBookTitleDto {
     private String title;
     private String isbn;
     private boolean canBorrow;
+    private int price;
     private LocalDate publishedDate;
     private String publisherId;    private List<String> authorIds;
 
     private List<String> categoryIds;
     
     private List<String> authorNames;
-    
+
     private List<String> categoryNames;
     
     private List<ResponseReviewDto> reviews;
+    
+    // Availability information
+    private Integer totalCopies;
+    private Integer availableCopies;
+    private Integer onlineReservations;
+    private Integer maxOnlineReservations;
+    
+    // User-specific information (only for authenticated users with USER role)
+    private Integer userReservationsForThisBook;
+    private Integer maxUserReservations;
 }

@@ -15,4 +15,5 @@ public interface ReservationRepository extends JpaRepository<Reservation, String
     List<Reservation> findByUserId(@RequestParam("userId") String userId);
     List<Reservation> findByUserIdAndStatus(@RequestParam("userId") String userId, @RequestParam("status") String status);
     List<Reservation> findByUserIdAndBookTitleId(@RequestParam("userId") String userId, @RequestParam("bookTitleId") String bookTitleId);
+    List<Reservation> findByBookTitleIdAndStatus(@RequestParam("bookTitleId") String bookTitleId, @RequestParam("status") String status);
 }

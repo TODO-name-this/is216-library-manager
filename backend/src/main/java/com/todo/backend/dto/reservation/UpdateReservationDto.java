@@ -9,10 +9,6 @@ import java.time.LocalDate;
 @Data
 @Builder
 public class UpdateReservationDto {
-    @NotNull(message = "Expiration date is required")
-    @Future(message = "Expiration date must be in the future")
-    private LocalDate expirationDate;
-
-    @Min(value = 0, message = "Deposit must be positive or zero")
-    private int deposit;
+    // Currently no fields that users can update
+    // Status changes are handled by librarians/admins through separate endpoints
 }
