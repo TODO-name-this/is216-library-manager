@@ -14,5 +14,5 @@ public class BookCopyDto {
     @Min(value = 1, message = "Quantity must be at least 1")
     private int quantity;
 
-    private String condition; // NEW, GOOD, WORN, DAMAGED
+    // We use to have condition in here don't know what happen to it
 }

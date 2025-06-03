@@ -15,9 +15,8 @@ public interface BookCopyMapper {
     BookCopyDto toDto(BookCopy bookCopy);
 
     @Mapping(target = "id", ignore = true)
-    void updateEntityFromDto(BookCopyDto bookCopyDto, @MappingTarget BookCopy bookCopy);
+    void updateEntityFromDto(BookCopyDto bookCopyDto, @MappingTarget BookCopy bookCopy);    @Mapping(target = "bookTitle", ignore = true)
 
-    @Mapping(target = "bookTitle", ignore = true)
     @Mapping(target = "bookPhotoUrl", ignore = true)
     @Mapping(target = "bookPrice", ignore = true)
     @Mapping(target = "borrowerCccd", ignore = true)

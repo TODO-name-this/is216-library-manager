@@ -21,9 +21,6 @@ public class Reservation {
     @Column(name = "EXPIRATION_DATE")
     private LocalDate expirationDate;
 
-    @Column(name = "STATUS")
-    private String status;
-
     @Column(name = "DEPOSIT")
     private int deposit;
 

@@ -1,12 +1,9 @@
 package com.todo.backend.dto.transaction;
 
-import com.todo.backend.entity.Transaction;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @Data
 public class CreateTransactionDto {
@@ -17,6 +14,6 @@ public class CreateTransactionDto {
     @NotBlank(message = "User ID is required")
     private String userId;
 
-    @NotNull(message = "Missing bookCopy ids")
-    private List<String> bookCopyIds;
+    @NotBlank(message = "Book copy ID is required")
+    private String bookCopyId;
 }

@@ -35,8 +35,8 @@ public class BookCopy {
     @OneToMany(mappedBy = "bookCopy", fetch = FetchType.LAZY)
     private List<Reservation> reservations;
 
-    // Relationship with TransactionDetail
+    // Relationship with Transaction
     @JsonIgnore
     @OneToMany(mappedBy = "bookCopy", fetch = FetchType.LAZY)
-    private List<TransactionDetail> transactionDetails;
+    private List<Transaction> transactions;
 }

@@ -34,10 +34,10 @@ public class TransactionDetailController {
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
-    @GetMapping("/{transactionId}/{bookCopyId}")
-    public ResponseEntity<?> getTransactionDetail(@PathVariable String transactionId, @PathVariable String bookCopyId) {
+    @GetMapping("/{transactionId}")
+    public ResponseEntity<?> getTransactionDetail(@PathVariable String transactionId) {
         try {
-            ResponseTransactionDetailDto transactionDetail = transactionDetailService.getTransactionDetail(transactionId, bookCopyId);
+            ResponseTransactionDetailDto transactionDetail = transactionDetailService.getTransactionDetail(transactionId);
             return ResponseEntity.ok(transactionDetail);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error fetching transaction detail: " + e.getMessage());
@@ -60,14 +60,14 @@ public class TransactionDetailController {
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
-    @PutMapping("/{transactionId}/{bookCopyId}")
-    public ResponseEntity<?> updateTransactionDetail(@PathVariable String transactionId, @PathVariable String bookCopyId, @Valid @RequestBody UpdateTransactionDetailDto updateTransactionDetailDto, BindingResult result) {
+    @PutMapping("/{transactionId}")
+    public ResponseEntity<?> updateTransactionDetail(@PathVariable String transactionId, @Valid @RequestBody UpdateTransactionDetailDto updateTransactionDetailDto, BindingResult result) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            ResponseTransactionDetailDto updatedTransactionDetail = transactionDetailService.updateTransactionDetail(transactionId, bookCopyId, updateTransactionDetailDto);
+            ResponseTransactionDetailDto updatedTransactionDetail = transactionDetailService.updateTransactionDetail(transactionId, updateTransactionDetailDto);
             return ResponseEntity.ok(updatedTransactionDetail);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error updating transaction detail: " + e.getMessage());
@@ -75,10 +75,10 @@ public class TransactionDetailController {
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
-    @DeleteMapping("/{transactionId}/{bookCopyId}")
-    public ResponseEntity<?> deleteTransactionDetail(@PathVariable String transactionId, @PathVariable String bookCopyId) {
+    @DeleteMapping("/{transactionId}")
+    public ResponseEntity<?> deleteTransactionDetail(@PathVariable String transactionId) {
         try {
-            transactionDetailService.deleteTransactionDetail(transactionId, bookCopyId);
+            transactionDetailService.deleteTransactionDetail(transactionId);
             return ResponseEntity.ok("Transaction detail deleted successfully");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error deleting transaction detail: " + e.getMessage());

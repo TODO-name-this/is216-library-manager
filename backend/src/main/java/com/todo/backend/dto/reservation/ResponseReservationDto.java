@@ -12,7 +12,6 @@ public class ResponseReservationDto {
     private String id;
     private LocalDate reservationDate;
     private LocalDate expirationDate;
-    private String status;
     private int deposit;
     private String bookTitleId;
     private String bookCopyId;

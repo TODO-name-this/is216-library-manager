@@ -11,7 +11,7 @@ This document describes all backend API endpoints for the Library Management Sys
 -   **User Balance Management**: Automatic deduction and refund system
 -   **Role-based Access Control**: Different permissions for USER, LIBRARIAN, and ADMIN roles
 -   **Comprehensive CRUD Operations**: Full create, read, update, delete support for all entities
--   **Real-time Availability**: Dynamic calculation of book availability and reservation status
+-   **Real-time Availability**: Dynamic calculation of book availability and reservation expiry
 -   **Vietnamese Language Support**: Sample data and error messages in Vietnamese
 
 ---
@@ -30,7 +30,7 @@ The library system uses a sophisticated hybrid inventory management approach tha
 **BookCopy**: Represents individual physical copies of a BookTitle
 
 -   Each copy has a unique ID following the pattern: `{BookTitleId}-{number}` (e.g., BT001-001)
--   Tracks status: AVAILABLE, BORROWED, MAINTENANCE, LOST
+-   Tracks status: AVAILABLE, BORROWED, LOST, OVERDUE
 -   Tracks condition: NEW, GOOD, WORN, DAMAGED
 -   Tracks physical location in the library
 
@@ -39,7 +39,7 @@ The library system uses a sophisticated hybrid inventory management approach tha
 1. **Creating Books**: When a BookTitle is created with `totalCopies: 5`, the system automatically generates 5 BookCopy entities
 2. **Online Reservations**: Users can reserve books online up to the `maxOnlineReservations` limit
 3. **Pool-based Borrowing**: Users reserve BookTitles, not specific copies. Librarians assign specific copies when users arrive
-4. **Availability Calculation**: Available copies = Total copies - Borrowed copies - Reserved copies
+4. **Availability Calculation**: Available copies = Total copies - Borrowed copies
 
 ### Inventory Reconciliation
 
@@ -191,6 +191,35 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
 
 ```json
 "User deleted successfully"
+```
+
+### Search User by ID or CCCD
+
+**GET** `/api/user/search/{searchTerm}`
+
+-   **Roles:** ADMIN, LIBRARIAN
+-   **Description:** Search for a user by their ID or CCCD number. This endpoint is designed for librarians to quickly find users during the transaction creation process.
+-   **Parameters:**
+    -   `searchTerm`: Can be either a user ID (e.g., "U001") or CCCD number (e.g., "123456789012")
+-   **Response Example:**
+
+```json
+{
+    "id": "U001",
+    "name": "Nguyễn Văn An",
+    "email": "an.nguyen@example.com",
+    "role": "USER",
+    "balance": 5000000,
+    "cccd": "123456789012",
+    "phoneNumber": "0912345678",
+    "address": "123 Nguyễn Huệ, Quận 1, TP.HCM"
+}
+```
+
+-   **Error Response (User not found):**
+
+```json
+"User not found with ID or CCCD: 123456789999"
 ```
 
 ---
@@ -397,7 +426,7 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
 -   **Description:** Update book title information and automatically adjust book copies if totalCopies changed
 -   **Business Logic:**
     -   If `totalCopies` increases: automatically creates new BookCopy entities
-    -   If `totalCopies` decreases: removes excess BookCopy entities (only if not borrowed/reserved)
+    -   If `totalCopies` decreases: removes excess BookCopy entities (only if not borrowed)
     -   Updates inventory counters and reconciles with actual copies
     -   Validates `maxOnlineReservations` <= `totalCopies`
     -   Price updates affect future transactions only
@@ -445,7 +474,7 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
 **DELETE** `/api/bookTitle/{id}`
 
 -   **Roles:** ADMIN, LIBRARIAN
--   **Description:** Delete a book title (only if no copies are borrowed or reserved)
+-   **Description:** Delete a book title (only if no copies are borrowed)
 -   **Response Example:**
 
 ```json
@@ -628,7 +657,7 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
         "userId": "U001",
         "bookTitleId": "BT001",
         "bookCopyId": null,
-        "status": "PENDING",
+        // Reservation status field removed; reservations are valid until expirationDate
         "reservationDate": "2025-06-01T10:00:00",
         "expirationDate": "2025-06-08T10:00:00",
         "deposit": 450000,
@@ -644,7 +673,7 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
         "userId": "U002",
         "bookTitleId": "BT002",
         "bookCopyId": "BC005",
-        "status": "READY_FOR_PICKUP",
+        // Reservation status field removed; reservations are valid until expirationDate
         "reservationDate": "2025-06-01T14:30:00",
         "expirationDate": "2025-06-08T14:30:00",
         "deposit": 380000,
@@ -673,7 +702,7 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
         "userId": "U001",
         "bookTitleId": "BT001",
         "bookCopyId": null,
-        "status": "PENDING",
+        // Reservation status field removed; reservations are valid until expirationDate
         "reservationDate": "2025-06-01T10:00:00",
         "expirationDate": "2025-06-08T10:00:00",
         "deposit": 450000,
@@ -701,7 +730,7 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
     "userId": "U001",
     "bookTitleId": "BT001",
     "bookCopyId": null,
-    "status": "PENDING",
+    // Reservation status field removed; reservations are valid until expirationDate
     "reservationDate": "2025-06-01T10:00:00",
     "expirationDate": "2025-06-08T10:00:00",
     "deposit": 450000,
@@ -742,7 +771,7 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
     "userId": "U001",
     "bookTitleId": "BT001",
     "bookCopyId": null,
-    "status": "PENDING",
+    // Reservation status field removed; reservations are valid until expirationDate
     "reservationDate": "2025-06-02T09:15:00",
     "expirationDate": "2025-06-09T09:15:00",
     "deposit": 450000,
@@ -777,7 +806,7 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
     "userId": "U001",
     "bookTitleId": "BT001",
     "bookCopyId": "BC001",
-    "status": "READY_FOR_PICKUP",
+    // Reservation status field removed; reservations are valid until expirationDate
     "reservationDate": "2025-06-01T10:00:00",
     "expirationDate": "2025-06-08T10:00:00",
     "deposit": 450000,
@@ -790,44 +819,9 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
 }
 ```
 
-### Update Reservation Status
+### Reservation Expiry
 
-**PUT** `/api/reservation/{id}`
-
--   **Roles:** ADMIN, LIBRARIAN
--   **Description:** Update reservation status (approve, reject, complete, etc.)
--   **Request Example:**
-
-```json
-{
-    "status": "COMPLETED"
-}
-```
-
--   **Response Example:**
-
-```json
-{
-    "id": "RES001",
-    "userId": "U001",
-    "bookTitleId": "BT001",
-    "bookCopyId": "BC001",
-    "status": "COMPLETED",
-    "reservationDate": "2025-06-01T10:00:00",
-    "expirationDate": "2025-06-08T10:00:00",
-    "deposit": 450000,
-    "bookTitle": "Effective Java",
-    "userName": "Nguyễn Văn An",
-    "authorNames": ["Joshua Bloch"],
-    "categoryNames": ["Lập trình Java"],
-    "availableCopies": 3,
-    "totalCopies": 3
-}
-```
-
-### Partial Update Reservation
-
-**PATCH** `/api/reservation/{id}`
+Reservations are valid until their `expirationDate`. After this date, they are automatically deleted by the system. There is no reservation status field; the existence of a reservation means it is valid.
 
 -   **Roles:** ADMIN, LIBRARIAN
 -   **Description:** Partially update reservation information
@@ -1084,7 +1078,7 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
 -   **Description:** Retrieve all book copies in the system with detailed information including book title, borrower details, and status
 -   **Response Example:**
 
-```json
+````json
 [
     {
         "id": "BC001",
@@ -1109,25 +1103,13 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
         "borrowerId": "U001"
     },
     {
-        "id": "BC003",
-        "bookTitleId": "BT001",
-        "status": "RESERVED",
-        "bookTitle": "Effective Java",
-        "bookPhotoUrl": "https://example.com/effective-java.jpg",
-        "bookPrice": 450000,
-        "borrowerCccd": "987654321098",
-        "borrowerName": "Trần Thị Bình",
-        "borrowerId": "U002"
-    }
-]
-```
 
 ### Get Book Copy by ID
 
 **GET** `/api/bookCopy/{id}`
 
 -   **Roles:** ADMIN, LIBRARIAN
--   **Description:** Retrieve detailed information about a specific book copy including book title, borrower details, and status
+-   **Description:** Retrieve detailed information about a specific book copy including book title, borrower details, status, and condition
 -   **Response Example (Available Book):**
 
 ```json
@@ -1135,6 +1117,7 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
     "id": "BC001",
     "bookTitleId": "BT001",
     "status": "AVAILABLE",
+    "condition": "NEW",
     "bookTitle": "Effective Java",
     "bookPhotoUrl": "https://example.com/effective-java.jpg",
     "bookPrice": 450000,
@@ -1142,7 +1125,7 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
     "borrowerName": null,
     "borrowerId": null
 }
-```
+````
 
 -   **Response Example (Borrowed Book):**
 
@@ -1151,28 +1134,13 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
     "id": "BC002",
     "bookTitleId": "BT001",
     "status": "BORROWED",
+    "condition": "GOOD",
     "bookTitle": "Effective Java",
     "bookPhotoUrl": "https://example.com/effective-java.jpg",
     "bookPrice": 450000,
     "borrowerCccd": "123456789012",
     "borrowerName": "Nguyễn Văn An",
     "borrowerId": "U001"
-}
-```
-
--   **Response Example (Reserved Book):**
-
-```json
-{
-    "id": "BC003",
-    "bookTitleId": "BT001",
-    "status": "RESERVED",
-    "bookTitle": "Effective Java",
-    "bookPhotoUrl": "https://example.com/effective-java.jpg",
-    "bookPrice": 450000,
-    "borrowerCccd": "987654321098",
-    "borrowerName": "Trần Thị Bình",
-    "borrowerId": "U002"
 }
 ```
 
@@ -1187,8 +1155,7 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
 ```json
 {
     "bookTitleId": "BT001",
-    "condition": "NEW",
-    "location": "A1-004"
+    "condition": "NEW"
 }
 ```
 
@@ -1199,9 +1166,7 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
     "id": "BC004",
     "bookTitleId": "BT001",
     "status": "AVAILABLE",
-    "condition": "NEW",
-    "location": "A1-004",
-    "bookCopyIds": ["BC004"]
+    "condition": "NEW"
 }
 ```
 
@@ -1239,7 +1204,7 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
 **DELETE** `/api/bookCopy/{id}`
 
 -   **Roles:** ADMIN, LIBRARIAN
--   **Description:** Delete a book copy (only if not borrowed or reserved)
+-   **Description:** Delete a book copy (only if not borrowed)
 -   **Response Example:**
 
 ```json
@@ -1380,6 +1345,82 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
 {
     "error": "Số dư không đủ. Số dư hiện tại: 400,000 VND, cần: 830,000 VND"
 }
+```
+
+### Create Transaction from Reservation (Librarian Workflow)
+
+**POST** `/api/transaction/from-reservation`
+
+-   **Roles:** ADMIN, LIBRARIAN
+-   **Description:** Create a transaction from a reservation where the librarian physically selects a specific book copy. The librarian scans or inputs the book copy ID they pick from the shelf, and the system validates it matches the reserved book title.
+-   **Business Logic:**
+    -   Validates reservation exists and gets user information
+    -   Validates the librarian-selected book copy matches the reserved book title
+    -   Enforces business rules: max 5 books per user, no duplicate book titles
+    -   Calculates remaining payment (total price minus deposit already paid)
+    -   Updates book copy status to "BORROWED"
+    -   Deletes the reservation after successful transaction creation
+    -   Validates user has sufficient balance for remaining amount
+-   **Request Example:**
+
+```json
+{
+    "reservationId": "R001",
+    "bookCopyId": "BC001"
+}
+```
+
+-   **Response Example (Success):**
+
+```json
+{
+    "id": "TXN004",
+    "userId": "U001",
+    "librarianId": "L001",
+    "issueDate": "2025-06-02T14:30:00",
+    "dueDate": "2025-06-16T14:30:00",
+    "returnDate": null,
+    "status": "BORROWED",
+    "totalFee": 350000,
+    "penaltyFee": 0,
+    "note": "Created from reservation R001"
+}
+```
+
+-   **Response Example (Reservation not found):**
+
+```json
+"Reservation not found with ID: R999"
+```
+
+-   **Response Example (Book copy doesn't match reservation):**
+
+```json
+"Selected book copy does not match the reserved book title"
+```
+
+-   **Response Example (Book copy not available):**
+
+```json
+"Book copy is not available for borrowing. Current status: BORROWED"
+```
+
+-   **Response Example (Insufficient balance):**
+
+```json
+"Insufficient balance. Current: 150,000 VND, Required: 250,000 VND"
+```
+
+-   **Response Example (Transaction limit exceeded):**
+
+```json
+"User already has 5 active transactions. Cannot borrow more books."
+```
+
+-   **Response Example (Duplicate book title):**
+
+```json
+"User already has an active transaction for this book title: Introduction to Java Programming"
 ```
 
 ### Update Transaction

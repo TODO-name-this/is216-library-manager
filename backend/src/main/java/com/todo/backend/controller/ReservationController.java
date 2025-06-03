@@ -1,7 +1,6 @@
 package com.todo.backend.controller;
 
 import com.todo.backend.dto.reservation.CreateReservationDto;
-import com.todo.backend.dto.reservation.PartialUpdateReservationDto;
 import com.todo.backend.dto.reservation.ResponseReservationDto;
 import com.todo.backend.dto.reservation.UpdateReservationDto;
 import com.todo.backend.service.ReservationService;
@@ -75,24 +74,7 @@ public class ReservationController {
             ResponseReservationDto updatedReservation = reservationService.updateReservation(id, userId, updateReservationDto);
             return ResponseEntity.ok(updatedReservation);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error updating reservation: " + e.getMessage());
-        }
-    }
-
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN', 'USER')")
-    @PatchMapping("/{id}")
-    public ResponseEntity<?> partialUpdateReservation(@PathVariable String id, @Valid @RequestBody PartialUpdateReservationDto partialUpdateReservationDto, BindingResult result, Authentication authentication) {
-        try {
-            if (result.hasErrors()) {
-                return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
-            }
-
-            String userId = authentication.getName();
-            ResponseReservationDto updatedReservation = reservationService.partialUpdateReservation(id, userId, partialUpdateReservationDto);
-            return ResponseEntity.ok(updatedReservation);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error partially updating reservation: " + e.getMessage());
-        }
+            return ResponseEntity.status(500).body("Error updating reservation: " + e.getMessage());        }
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")

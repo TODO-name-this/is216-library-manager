@@ -16,6 +16,7 @@ import com.todo.backend.mapper.ReviewMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -132,10 +133,11 @@ public class BookTitleService {
         // Calculate availability information using hybrid inventory system
         int totalCopies = bookTitle.getTotalCopies();
         int maxOnlineReservations = bookTitle.getMaxOnlineReservations();
-        
-        // Get pending reservations for this book title (these are the ones that count as online reservations)
-        List<Reservation> pendingReservations = reservationRepository.findByBookTitleIdAndStatus(id, "PENDING");
-        int onlineReservations = pendingReservations.size();
+
+        // Get active reservations for this book title (these are the ones that count as online reservations)
+        LocalDate today = LocalDate.now();
+        List<Reservation> activeReservations = reservationRepository.findActiveReservationsByBookTitleId(id, today);
+        int onlineReservations = activeReservations.size();
         
         // Available copies for online reservation = max online reservations - current online reservations
         int availableForOnlineReservation = Math.max(0, maxOnlineReservations - onlineReservations);
@@ -149,8 +151,8 @@ public class BookTitleService {
         responseBookTitleDto.setOnlineReservations(onlineReservations);
         responseBookTitleDto.setMaxOnlineReservations(maxOnlineReservations);        // Set user-specific information (only for authenticated users with USER role)
         if (currentUserId != null && isUserRole) {
-            // Get user's total PENDING reservations across all books (this shows global user reservation count)
-            List<Reservation> userTotalReservations = reservationRepository.findByUserIdAndStatus(currentUserId, "PENDING");
+            // Get user's total active reservations across all books (this shows global user reservation count)
+            List<Reservation> userTotalReservations = reservationRepository.findActiveReservationsByUserId(currentUserId, today);
             responseBookTitleDto.setUserReservationsForThisBook(userTotalReservations.size()); // Note: despite field name, this is total user reservations
             responseBookTitleDto.setMaxUserReservations(5); // Business rule: max 5 reservations per user
         }
@@ -279,6 +281,7 @@ public class BookTitleService {
             BookCopy bookCopy = new BookCopy();
             bookCopy.setBookTitleId(bookTitleId);
             bookCopy.setStatus("AVAILABLE");
+            bookCopy.setCondition("NEW"); // Set default condition for auto-generated copies
             
             // Generate human-readable ID like "HARRYPOTTER001", "HARRYPOTTER002", etc.
             String copyNumber = String.format("%03d", i);
@@ -325,17 +328,20 @@ public class BookTitleService {
                 .orElseThrow(() -> new IllegalArgumentException("BookTitle not found"));
                 
         // Check if there are available slots for online reservations
-        List<Reservation> pendingReservations = reservationRepository.findByBookTitleIdAndStatus(bookTitleId, "PENDING");
-        int currentOnlineReservations = pendingReservations.size();
+        LocalDate today = LocalDate.now();
+        List<Reservation> activeReservations = reservationRepository.findActiveReservationsByBookTitleId(bookTitleId, today);
+        int currentOnlineReservations = activeReservations.size();
         
         if (currentOnlineReservations >= bookTitle.getMaxOnlineReservations()) {
             return false; // No more online reservation slots available
         }
         
-        // Check if user already has a reservation for this book
+        // Check if user already has an active reservation for this book
         List<Reservation> userReservations = reservationRepository.findByUserIdAndBookTitleId(userId, bookTitleId);
-        if (!userReservations.isEmpty()) {
-            return false; // User already has a reservation for this book
+        for (Reservation reservation : userReservations) {
+            if (reservation.getExpirationDate().isAfter(today) || reservation.getExpirationDate().isEqual(today)) {
+                return false; // User already has an active reservation for this book
+            }
         }
         
         return true;

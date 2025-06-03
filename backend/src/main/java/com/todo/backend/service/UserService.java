@@ -9,8 +9,6 @@ import com.todo.backend.entity.User;
 import com.todo.backend.entity.identity.UserRole;
 import com.todo.backend.mapper.UserMapper;
 import jakarta.transaction.Transactional;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.parameters.P;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -86,9 +84,7 @@ public class UserService {
 
         List<Transaction> transactions = existingUser.getTransactions();
         boolean hasUnreturnedTransactions = transactions.stream()
-                .filter(t -> t.getTransactionDetails() != null && !t.getTransactionDetails().isEmpty())
-                .flatMap(t -> t.getTransactionDetails().stream())
-                .anyMatch(td -> td.getReturnedDate() == null);
+                .anyMatch(t -> t.getReturnedDate() == null);
 
         if (hasUnreturnedTransactions) {
             throw new IllegalArgumentException("User has unreturned transactions and cannot be deleted");

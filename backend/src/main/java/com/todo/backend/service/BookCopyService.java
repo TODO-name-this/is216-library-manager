@@ -3,19 +3,18 @@ package com.todo.backend.service;
 import com.todo.backend.dao.BookCopyRepository;
 import com.todo.backend.dao.BookTitleRepository;
 import com.todo.backend.dao.ReservationRepository;
-import com.todo.backend.dao.TransactionDetailRepository;
+import com.todo.backend.dao.TransactionRepository;
 import com.todo.backend.dao.UserRepository;
 import com.todo.backend.dto.bookcopy.BookCopyDto;
 import com.todo.backend.dto.bookcopy.ResponseBookCopyDto;
 import com.todo.backend.entity.BookCopy;
 import com.todo.backend.entity.Reservation;
-import com.todo.backend.entity.TransactionDetail;
+import com.todo.backend.entity.Transaction;
 import com.todo.backend.entity.User;
 import com.todo.backend.mapper.BookCopyMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.List;
 
 @Service
@@ -23,17 +22,17 @@ import java.util.List;
 public class BookCopyService {    private final BookCopyRepository bookCopyRepository;
     private final BookTitleRepository bookTitleRepository;
     private final ReservationRepository reservationRepository;
-    private final TransactionDetailRepository transactionDetailRepository;
+    private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
     private final BookCopyMapper bookCopyMapper;
 
-    public BookCopyService(BookCopyRepository bookCopyRepository, BookTitleRepository bookTitleRepository,
-                          ReservationRepository reservationRepository, TransactionDetailRepository transactionDetailRepository, 
+    public BookCopyService(BookCopyRepository bookCopyRepository, BookTitleRepository bookTitleRepository, 
+                          ReservationRepository reservationRepository, TransactionRepository transactionRepository, 
                           UserRepository userRepository, BookCopyMapper bookCopyMapper) {
         this.bookCopyRepository = bookCopyRepository;
         this.bookTitleRepository = bookTitleRepository;
         this.reservationRepository = reservationRepository;
-        this.transactionDetailRepository = transactionDetailRepository;
+        this.transactionRepository = transactionRepository;
         this.userRepository = userRepository;
         this.bookCopyMapper = bookCopyMapper;
     }
@@ -59,22 +58,25 @@ public class BookCopyService {    private final BookCopyRepository bookCopyRepos
         ResponseBookCopyDto.ResponseBookCopyDtoBuilder builder = ResponseBookCopyDto.builder()
                 .id(bookCopy.getId())
                 .bookTitleId(bookCopy.getBookTitleId())
-                .status(bookCopy.getStatus());
+                .status(bookCopy.getStatus())
+                .condition(bookCopy.getCondition()); // Add the condition field
 
         // Add book title information
         if (bookCopy.getBookTitle() != null) {
             builder.bookTitle(bookCopy.getBookTitle().getTitle())
                    .bookPhotoUrl(bookCopy.getBookTitle().getImageUrl())
                    .bookPrice(bookCopy.getBookTitle().getPrice());
-        }        // Add borrower information if the book is currently borrowed
+        }
+
+        // Add borrower information if the book is currently borrowed
         if ("BORROWED".equals(bookCopy.getStatus())) {
-            // Find the current borrower through transaction details
-            List<TransactionDetail> unreturned = transactionDetailRepository
-                    .findByBookCopyIdAndNotReturned(bookCopy.getId());
+            // Find the current borrower through transactions
+            List<Transaction> unreturned = transactionRepository
+                    .findByBookCopyIdAndReturnedDateIsNull(bookCopy.getId());
 
             if (!unreturned.isEmpty()) {
-                TransactionDetail currentTransaction = unreturned.get(0);
-                User borrower = userRepository.findById(currentTransaction.getTransaction().getUserId()).orElse(null);
+                Transaction currentTransaction = unreturned.get(0);
+                User borrower = userRepository.findById(currentTransaction.getUserId()).orElse(null);
                 
                 if (borrower != null) {
                     builder.borrowerCccd(borrower.getCccd())
@@ -82,7 +84,9 @@ public class BookCopyService {    private final BookCopyRepository bookCopyRepos
                            .borrowerId(borrower.getId());
                 }
             }
-        }        // Add reserver information if the book is currently reserved
+        }
+
+        // Add reserver information if the book is currently reserved
         if ("RESERVED".equals(bookCopy.getStatus())) {
             // Find the current reserver through reservations (any reservation with this bookCopyId assigned)
             List<Reservation> activeReservations = reservationRepository
@@ -112,6 +116,7 @@ public class BookCopyService {    private final BookCopyRepository bookCopyRepos
         BookCopy bookCopy = new BookCopy();
         bookCopy.setBookTitleId(bookCopyDto.getBookTitleId());
         bookCopy.setStatus("AVAILABLE");
+        bookCopy.setCondition("NEW"); // Set default condition for new book copies or you could have bookCopy condition in the dto idk
         bookCopyRepository.save(bookCopy);
 
         // Return the enhanced DTO for the created copy

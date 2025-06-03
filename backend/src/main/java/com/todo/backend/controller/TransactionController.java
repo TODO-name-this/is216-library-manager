@@ -1,9 +1,9 @@
 package com.todo.backend.controller;
 
 import com.todo.backend.dto.transaction.CreateTransactionDto;
+import com.todo.backend.dto.transaction.CreateTransactionFromReservationDto;
 import com.todo.backend.dto.transaction.ResponseTransactionDto;
 import com.todo.backend.dto.transaction.UpdateTransactionDto;
-import com.todo.backend.entity.Transaction;
 import com.todo.backend.service.TransactionService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -81,9 +81,24 @@ public class TransactionController {
             }
 
             ResponseTransactionDto updatedTransaction = transactionService.updateTransaction(id, updateTransactionDto);
-            return ResponseEntity.ok(updatedTransaction);
-        } catch (Exception e) {
+            return ResponseEntity.ok(updatedTransaction);        } catch (Exception e) {
             return ResponseEntity.status(500).body("Error updating transaction: " + e.getMessage());
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
+    @PostMapping("/from-reservation")
+    public ResponseEntity<?> createTransactionFromReservation(@Valid @RequestBody CreateTransactionFromReservationDto dto, BindingResult result) {
+        try {
+            if (result.hasErrors()) {
+                return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
+            }            ResponseTransactionDto createdTransaction = transactionService.createTransactionFromReservation(
+                dto.getReservationId(),
+                dto.getBookCopyId()
+            );
+            return ResponseEntity.ok(createdTransaction);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error creating transaction from reservation: " + e.getMessage());
         }
     }
 

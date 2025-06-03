@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @Data
 @Builder
@@ -15,9 +14,5 @@ public class UpdateTransactionDto {
     @Future(message = "Due date must be in the future")
     private LocalDate dueDate;
 
-    @NotNull(message = "Missing returned book copies list")
-    List<String> returnedBookCopyIds;
-
-    @NotNull(message = "Missing damaged book copies list")
-    List<DamagedBookCopyDto> damagedBookCopyIds;
+    private LocalDate returnedDate;
 }
