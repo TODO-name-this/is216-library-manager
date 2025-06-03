@@ -1,7 +1,6 @@
 package com.todo.backend.controller;
 
 import com.todo.backend.dto.reservation.CreateReservationDto;
-import com.todo.backend.dto.reservation.PartialUpdateReservationDto;
 import com.todo.backend.dto.reservation.ResponseReservationDto;
 import com.todo.backend.dto.reservation.UpdateReservationDto;
 import com.todo.backend.service.ReservationService;
@@ -75,24 +74,7 @@ public class ReservationController {
             ResponseReservationDto updatedReservation = reservationService.updateReservation(id, userId, updateReservationDto);
             return ResponseEntity.ok(updatedReservation);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error updating reservation: " + e.getMessage());
-        }
-    }
-
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN', 'USER')")
-    @PatchMapping("/{id}")
-    public ResponseEntity<?> partialUpdateReservation(@PathVariable String id, @Valid @RequestBody PartialUpdateReservationDto partialUpdateReservationDto, BindingResult result, Authentication authentication) {
-        try {
-            if (result.hasErrors()) {
-                return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
-            }
-
-            String userId = authentication.getName();
-            ResponseReservationDto updatedReservation = reservationService.partialUpdateReservation(id, userId, partialUpdateReservationDto);
-            return ResponseEntity.ok(updatedReservation);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error partially updating reservation: " + e.getMessage());
-        }
+            return ResponseEntity.status(500).body("Error updating reservation: " + e.getMessage());        }
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
@@ -103,6 +85,30 @@ public class ReservationController {
             return ResponseEntity.ok("Reservation deleted successfully");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error deleting reservation: " + e.getMessage());
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('USER')")
+    @GetMapping("/my")
+    public ResponseEntity<?> getMyReservations(Authentication authentication) {
+        try {
+            String userId = authentication.getName();
+            List<ResponseReservationDto> reservations = reservationService.getReservationsByUserId(userId);
+            return ResponseEntity.ok(reservations);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching user reservations: " + e.getMessage());
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN', 'USER')")
+    @PostMapping("/{id}/assign-copy")
+    public ResponseEntity<?> assignBookCopyToReservation(@PathVariable String id, Authentication authentication) {
+        try {
+            String userId = authentication.getName();
+            ResponseReservationDto updatedReservation = reservationService.assignBookCopyToReservation(id, userId);
+            return ResponseEntity.ok(updatedReservation);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error assigning book copy: " + e.getMessage());
         }
     }
 }

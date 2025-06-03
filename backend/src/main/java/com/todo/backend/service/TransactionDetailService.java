@@ -5,7 +5,6 @@ import com.todo.backend.dto.transactiondetail.CreateTransactionDetailDto;
 import com.todo.backend.dto.transactiondetail.ResponseTransactionDetailDto;
 import com.todo.backend.dto.transactiondetail.UpdateTransactionDetailDto;
 import com.todo.backend.entity.TransactionDetail;
-import com.todo.backend.entity.compositekey.TransactionDetailPrimaryKey;
 import com.todo.backend.mapper.TransactionDetailMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
@@ -28,8 +27,8 @@ public class TransactionDetailService {
         return transactionDetailMapper.toResponseDtoList(transactionDetails);
     }
 
-    public ResponseTransactionDetailDto getTransactionDetail(String transactionId, String bookCopyId) {
-        TransactionDetail transactionDetail = transactionDetailRepository.findByTransactionIdAndBookCopyId(transactionId, bookCopyId);
+    public ResponseTransactionDetailDto getTransactionDetail(String transactionId) {
+        TransactionDetail transactionDetail = transactionDetailRepository.findByTransactionId(transactionId);
         if (transactionDetail == null) {
             throw new RuntimeException("Transaction detail not found");
         }
@@ -42,8 +41,8 @@ public class TransactionDetailService {
         return transactionDetailMapper.toResponseDto(savedTransactionDetail);
     }
 
-    public ResponseTransactionDetailDto updateTransactionDetail(String transactionId, String bookCopyId, UpdateTransactionDetailDto updateTransactionDetailDto) {
-        TransactionDetail existingTransactionDetail = transactionDetailRepository.findByTransactionIdAndBookCopyId(transactionId, bookCopyId);
+    public ResponseTransactionDetailDto updateTransactionDetail(String transactionId, UpdateTransactionDetailDto updateTransactionDetailDto) {
+        TransactionDetail existingTransactionDetail = transactionDetailRepository.findByTransactionId(transactionId);
         if (existingTransactionDetail == null) {
             throw new RuntimeException("Transaction detail not found");
         }
@@ -53,8 +52,8 @@ public class TransactionDetailService {
         return transactionDetailMapper.toResponseDto(updatedTransactionDetail);
     }
 
-    public void deleteTransactionDetail(String transactionId, String bookCopyId) {
-        TransactionDetail existingTransactionDetail = transactionDetailRepository.findByTransactionIdAndBookCopyId(transactionId, bookCopyId);
+    public void deleteTransactionDetail(String transactionId) {
+        TransactionDetail existingTransactionDetail = transactionDetailRepository.findByTransactionId(transactionId);
         if (existingTransactionDetail == null) {
             throw new RuntimeException("Transaction detail not found");
         }

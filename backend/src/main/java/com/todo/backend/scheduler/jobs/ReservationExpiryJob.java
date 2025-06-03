@@ -24,7 +24,7 @@ public class ReservationExpiryJob implements Job {
         int retryCount = jobDataMap.getInt("retryCount");
 
         try {
-            reservationService.setExpiredReservation(reservationId);
+            reservationService.cleanupExpiredReservation(reservationId);
         }
         catch (Exception e) {
             if (retryCount < 3) {

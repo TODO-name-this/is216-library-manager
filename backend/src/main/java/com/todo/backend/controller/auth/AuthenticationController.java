@@ -18,6 +18,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+@CrossOrigin("http://localhost:3000")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")

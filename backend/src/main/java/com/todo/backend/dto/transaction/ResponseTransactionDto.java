@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @Data
 @Builder
@@ -14,6 +13,8 @@ public class ResponseTransactionDto {
     private LocalDate borrowDate;
     private LocalDate dueDate;
     private String userId;
+    private String bookCopyId;
+    private LocalDate returnedDate;
 
-    List<ResponseTransactionDetailDto> details;
+    private ResponseTransactionDetailDto transactionDetail;
 }

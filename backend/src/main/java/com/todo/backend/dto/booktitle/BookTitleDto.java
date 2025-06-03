@@ -1,5 +1,6 @@
 package com.todo.backend.dto.booktitle;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
@@ -24,6 +25,9 @@ public class BookTitleDto {
 
     private boolean canBorrow;
 
+    @NotNull(message = "Price is required")
+    private Integer price;
+
     @Past(message = "Date of publication must be in the past")
     private LocalDate publishedDate;
 
@@ -35,4 +39,12 @@ public class BookTitleDto {
 
     @NotNull(message = "Missing category ids")
     private List<String> categoryIds;
+
+    @NotNull(message = "Total copies is required")
+    @Min(value = 1, message = "Total copies must be at least 1")
+    private Integer totalCopies;
+
+    @NotNull(message = "Max online reservations is required")
+    @Min(value = 0, message = "Max online reservations cannot be negative")
+    private Integer maxOnlineReservations;
 }

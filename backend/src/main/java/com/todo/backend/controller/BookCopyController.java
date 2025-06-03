@@ -20,6 +20,7 @@ public class BookCopyController {
         this.bookCopyService = bookCopyService;
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @GetMapping()
     public ResponseEntity<?> getAllBookCopies() {
         try {
@@ -29,6 +30,7 @@ public class BookCopyController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @GetMapping("/{id}")
     public ResponseEntity<?> getBookCopy(@PathVariable String id) {
         try {

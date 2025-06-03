@@ -13,4 +13,6 @@ public class BookCopyDto {
 
     @Min(value = 1, message = "Quantity must be at least 1")
     private int quantity;
+
+    // We use to have condition in here don't know what happen to it
 }

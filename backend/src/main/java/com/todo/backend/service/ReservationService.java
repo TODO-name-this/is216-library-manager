@@ -7,7 +7,6 @@ import com.todo.backend.dao.UserRepository;
 import com.todo.backend.dto.reservation.CreateReservationDto;
 import com.todo.backend.dto.reservation.ResponseReservationDto;
 import com.todo.backend.dto.reservation.UpdateReservationDto;
-import com.todo.backend.dto.reservation.PartialUpdateReservationDto;
 import com.todo.backend.entity.BookCopy;
 import com.todo.backend.entity.BookTitle;
 import com.todo.backend.entity.Reservation;
@@ -59,12 +58,37 @@ public class ReservationService {
             throw new RuntimeException("You do not have permission to view this reservation");
         }
 
-        return reservationMapper.toResponseDto(reservation);
+        return enhanceReservationDto(reservation, userId);
+    }
+
+    private ResponseReservationDto enhanceReservationDto(Reservation reservation, String requestingUserId) {
+        ResponseReservationDto dto = reservationMapper.toResponseDto(reservation);
+        
+        // Get book details
+        BookTitle bookTitle = reservation.getBookTitle();
+        dto.setBookTitle(bookTitle.getTitle());
+        dto.setBookImageUrl(bookTitle.getImageUrl());
+        
+        // Get author names
+        List<String> authorNames = bookTitle.getBookAuthors().stream()
+                .map(bookAuthor -> bookAuthor.getAuthor().getName())
+                .toList();        dto.setBookAuthors(authorNames);
+        
+        return dto;
     }
 
     public List<ResponseReservationDto> getAllReservations() {
         List<Reservation> reservations = reservationRepository.findAll();
-        return reservationMapper.toResponseDtoList(reservations);
+        return reservations.stream()
+                .map(reservation -> enhanceReservationDto(reservation, null))
+                .toList();
+    }
+
+    public List<ResponseReservationDto> getReservationsByUserId(String userId) {
+        List<Reservation> reservations = reservationRepository.findByUserId(userId);
+        return reservations.stream()
+                .map(reservation -> enhanceReservationDto(reservation, userId))
+                .toList();
     }
 
     public ResponseReservationDto createReservation(String userId, CreateReservationDto createReservationDto) {
@@ -76,28 +100,26 @@ public class ReservationService {
         validateReservationRules(reservation);
 
         // Check if a user exists
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
-
-        // Check if a user has enough balances to reserve
-        if (user.getBalance() < createReservationDto.getDeposit()) {
-            throw new RuntimeException("User does not have enough balance to reserve");
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));        // Check if a user has enough balances to reserve
+        BookTitle bookTitle = bookTitleRepository.findById(createReservationDto.getBookTitleId())
+                .orElseThrow(() -> new RuntimeException("Book title not found"));
+        int depositAmount = bookTitle.getPrice() / 10; // 10% of book price as deposit
+        
+        if (user.getBalance() < depositAmount) {
+            throw new RuntimeException("User does not have enough balance to reserve. Required deposit: " + 
+                String.format("%,d", depositAmount) + " VND");
         }
 
         // Deduct the deposit from the user's balance
-        user.setBalance(user.getBalance() - createReservationDto.getDeposit());
+        user.setBalance(user.getBalance() - depositAmount);
         userRepository.save(user);
 
-        BookCopy availableBookCopy = bookCopyRepository.findFirstByBookTitleIdAndStatus(createReservationDto.getBookTitleId(), "available");
-        if (availableBookCopy == null) {
-            throw new RuntimeException("No available book copy for reservation");
-        }
-        reservation.setBookCopyId(availableBookCopy.getId());
-        reservation.setStatus("PENDING");
+        // In the hybrid system, we don't reserve specific copies during online reservation
+        // BookCopy will be assigned when the user comes to pick up the book
+        reservation.setBookCopyId(null); // Will be assigned later during pickup
         reservation.setReservationDate(today);
-
-        // Update the status of the book copy to "reserved"
-        availableBookCopy.setStatus("RESERVED");
-        bookCopyRepository.save(availableBookCopy);
+        reservation.setExpirationDate(today.plusWeeks(1)); // Automatically set expiration to 1 week from reservation date
+        reservation.setDeposit(depositAmount); // Set the calculated deposit
 
         reservationRepository.save(reservation);
 
@@ -126,82 +148,15 @@ public class ReservationService {
             throw new RuntimeException("You do not have permission to update this reservation");
         }
 
-        // Prevent updating a reservation that is already COMPLETED, CANCELLED or EXPIRED
-        if (existingReservation.getStatus().equals("COMPLETED") ||
-            existingReservation.getStatus().equals("CANCELLED") ||
-            existingReservation.getStatus().equals("EXPIRED")) {
-            throw new RuntimeException("Can't update a reservation that is already compeleted, cancelled or expired");
+        // Check if reservation is expired
+        LocalDate today = LocalDate.now();
+        if (existingReservation.getExpirationDate().isBefore(today)) {
+            throw new RuntimeException("Can't update an expired reservation");
         }
-
-        // Update the user's balance if the deposit changes
-        User owner = userRepository.findById(existingReservation.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        if (existingReservation.getDeposit() > updateReservationDto.getDeposit()) {
-            int difference = existingReservation.getDeposit() - updateReservationDto.getDeposit();
-
-            owner.setBalance(owner.getBalance() + difference);
-            userRepository.save(owner);
-        }
-        else if (existingReservation.getDeposit() < updateReservationDto.getDeposit()) {
-            int difference = updateReservationDto.getDeposit() - existingReservation.getDeposit();
-
-            if (owner.getBalance() < difference) {
-                throw new RuntimeException("User does not have enough balance to update the reservation");
-            }
-
-            owner.setBalance(owner.getBalance() - difference);
-            userRepository.save(owner);
-        }
-
-        LocalDate oldExpirationDate = existingReservation.getExpirationDate();
-
-        // Update the reservation details
+        
+        // Update the reservation details (deposits are automatically managed based on book prices)
         reservationMapper.updateEntityFromDto(updateReservationDto, existingReservation);
         reservationRepository.save(existingReservation);
-
-        // Update scheduled job if the expiration date has changed
-        if (!oldExpirationDate.equals(existingReservation.getExpirationDate())) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    TransactionSynchronization.super.afterCommit();
-                    deleteScheduledJob(existingReservation);
-                    createExpiryJob(existingReservation);
-                }
-            });
-        }
-
-        return reservationMapper.toResponseDto(existingReservation);
-    }
-
-    public ResponseReservationDto partialUpdateReservation(String id, String userId, PartialUpdateReservationDto partialUpdateReservationDto) {
-        String status = partialUpdateReservationDto.getStatus();
-
-        if (!status.equals("COMPLETED") && !status.equals("CANCELLED")) {
-            throw new RuntimeException("Status must be either COMPLETED or CANCELLED");
-        }
-
-        Reservation existingReservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Reservation not found"));
-
-        // ADMIN, LIBRARIAN or the user who created the reservation can update it
-        boolean isOwner = existingReservation.getUserId().equals(userId);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        boolean isAdminOrLibrarian = user.getRole().equals(UserRole.ADMIN) || user.getRole().equals(UserRole.LIBRARIAN);
-
-        if (!isOwner && !isAdminOrLibrarian) {
-            throw new RuntimeException("You do not have permission to update this reservation");
-        }
-
-        // Prevent updating a reservation that is already COMPLETED, CANCELLED or EXPIRED
-        if (existingReservation.getStatus().equals("COMPLETED") ||
-            existingReservation.getStatus().equals("CANCELLED") ||
-            existingReservation.getStatus().equals("EXPIRED")) {
-            throw new RuntimeException("Can't update a reservation that is already completed, cancelled or expired");
-        }
-
-        finalizeReservation(existingReservation, status);
 
         return reservationMapper.toResponseDto(existingReservation);
     }
@@ -210,19 +165,25 @@ public class ReservationService {
         Reservation existingReservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
 
-        if (existingReservation.getStatus().equals("PENDING")) {
-            finalizeReservation(existingReservation, "CANCELLED");
+        // Check if reservation is expired (expired reservations are auto-cleaned, but if user tries to delete, allow it)
+        LocalDate today = LocalDate.now();
+        if (existingReservation.getExpirationDate().isAfter(today) || existingReservation.getExpirationDate().isEqual(today)) {
+            // Reservation is still active, cancel it and refund deposit
+            cancelReservation(existingReservation);
         }
 
         reservationRepository.delete(existingReservation);
     }
 
-    public void setExpiredReservation(String id) {
+    public void cleanupExpiredReservation(String id) {
         Reservation existingReservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
 
-        if (existingReservation.getStatus().equals("PENDING")) {
-            finalizeReservation(existingReservation, "EXPIRED");
+        LocalDate today = LocalDate.now();
+        if (existingReservation.getExpirationDate().isBefore(today)) {
+            // Reservation is expired, clean it up
+            cancelReservation(existingReservation);
+            reservationRepository.delete(existingReservation);
         }
     }
 
@@ -261,12 +222,14 @@ public class ReservationService {
         }
     }
 
-    private void finalizeReservation(Reservation reservation, String status) {
-        // Restore the book copy status to "AVAILABLE"
-        BookCopy bookCopy = bookCopyRepository.findById(reservation.getBookCopyId())
-                .orElseThrow(() -> new RuntimeException("Book copy not found"));
-        bookCopy.setStatus("AVAILABLE");
-        bookCopyRepository.save(bookCopy);
+    private void cancelReservation(Reservation reservation) {
+        // In the hybrid system, only restore book copy status if a specific copy was assigned
+        if (reservation.getBookCopyId() != null) {
+            BookCopy bookCopy = bookCopyRepository.findById(reservation.getBookCopyId())
+                    .orElseThrow(() -> new RuntimeException("Book copy not found"));
+            bookCopy.setStatus("AVAILABLE");
+            bookCopyRepository.save(bookCopy);
+        }
 
         // Return the deposit to the user
         User user = userRepository.findById(reservation.getUserId())
@@ -274,24 +237,64 @@ public class ReservationService {
         user.setBalance(user.getBalance() + reservation.getDeposit());
         userRepository.save(user);
 
-        reservation.setStatus(status);
-        reservationRepository.save(reservation);
-
         deleteScheduledJob(reservation);
     }
 
+    /**
+     * Assign a specific BookCopy to a reservation when user comes to pick up
+     * This converts an online reservation to a physical checkout
+     */
+    public ResponseReservationDto assignBookCopyToReservation(String reservationId, String userId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Reservation not found"));
+
+        // Verify permissions
+        boolean isOwner = reservation.getUserId().equals(userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        boolean isAdminOrLibrarian = user.getRole().equals(UserRole.ADMIN) || user.getRole().equals(UserRole.LIBRARIAN);
+        
+        if (!isOwner && !isAdminOrLibrarian) {
+            throw new RuntimeException("You do not have permission to assign book copy to this reservation");
+        }
+
+        // Check if reservation is still active
+        LocalDate today = LocalDate.now();
+        if (reservation.getExpirationDate().isBefore(today)) {
+            throw new RuntimeException("Cannot assign book copy to expired reservation");
+        }
+
+        // Find an available book copy for this book title
+        BookCopy availableBookCopy = bookCopyRepository.findFirstByBookTitleIdAndStatus(
+                reservation.getBookTitleId(), "AVAILABLE");
+        
+        if (availableBookCopy == null) {
+            throw new RuntimeException("No available physical copy for pickup at this time");
+        }
+
+        // Assign the book copy and update statuses
+        reservation.setBookCopyId(availableBookCopy.getId());
+        availableBookCopy.setStatus("RESERVED");
+        
+        reservationRepository.save(reservation);
+        bookCopyRepository.save(availableBookCopy);
+
+        return enhanceReservationDto(reservation, userId);
+    }
+
     private void validateReservationRules(Reservation reservation) {
-        List<Reservation> pendingReservations = reservationRepository.findByUserIdAndStatus(reservation.getUserId(), "PENDING");
+        LocalDate today = LocalDate.now();
+        List<Reservation> activeReservations = reservationRepository.findActiveReservationsByUserId(reservation.getUserId(), today);
 
         // Maximum 5 reservations per user
         final int MAX_RESERVATIONS = 5;
-        if (pendingReservations.size() >= MAX_RESERVATIONS) {
-            throw new RuntimeException("User has reached the maximum number of pending reservations");
+        if (activeReservations.size() >= MAX_RESERVATIONS) {
+            throw new RuntimeException("User has reached the maximum number of active reservations");
         }
 
         // Only one reservation per book title
-        for (Reservation pendingReservation : pendingReservations) {
-            if (pendingReservation.getBookTitleId().equals(reservation.getBookTitleId())) {
+        for (Reservation activeReservation : activeReservations) {
+            if (activeReservation.getBookTitleId().equals(reservation.getBookTitleId())) {
                 throw new RuntimeException("User has already reserved this book");
             }
         }
@@ -302,6 +305,14 @@ public class ReservationService {
 
         if (!bookTitle.isCanBorrow()) {
             throw new RuntimeException("This book title cannot be reserved");
+        }
+
+        // Check online reservation availability using hybrid inventory system
+        List<Reservation> bookTitleActiveReservations = reservationRepository.findActiveReservationsByBookTitleId(reservation.getBookTitleId(), today);
+        int currentOnlineReservations = bookTitleActiveReservations.size();
+        
+        if (currentOnlineReservations >= bookTitle.getMaxOnlineReservations()) {
+            throw new RuntimeException("No more online reservation slots available for this book");
         }
 
         // Check if the deposit is valid
