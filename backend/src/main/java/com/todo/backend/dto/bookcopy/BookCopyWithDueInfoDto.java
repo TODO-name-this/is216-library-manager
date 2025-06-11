@@ -19,5 +19,6 @@ public class BookCopyWithDueInfoDto {
     private LocalDate borrowDate;
     private String borrowerId;
     private String borrowerName;
+    private String borrowerCccd;
     private Boolean isOverdue;
 }

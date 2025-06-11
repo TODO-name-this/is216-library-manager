@@ -27,99 +27,102 @@ public interface BookCopyRepository extends JpaRepository<BookCopy, String> {
     List<BookCopy> findByBookTitleId(String bookTitleId);
 
     @Query("""
-        SELECT new com.todo.backend.dto.bookcopy.BookCopyWithDueInfoDto(
-               bc.id,
-               bc.status,
-               bc.condition,
-               bt.title,
-               bt.id,
-               t.dueDate,
-               t.borrowDate,
-               t.userId,
-               u.name,
-               CASE WHEN t.dueDate IS NOT NULL AND t.dueDate < CURRENT_DATE AND t.returnedDate IS NULL
-                    THEN true
-                    ELSE false
-               END
+    SELECT new com.todo.backend.dto.bookcopy.BookCopyWithDueInfoDto(
+           bc.id,
+           bc.status,
+           bc.condition,
+           bt.title,
+           bt.id,
+           t.dueDate,
+           t.borrowDate,
+           t.userId,
+           u.name,
+           u.cccd,
+           CASE WHEN t.dueDate IS NOT NULL AND t.dueDate < CURRENT_DATE AND t.returnedDate IS NULL
+                THEN true
+                ELSE false
+           END
+    )
+    FROM BookCopy bc
+    LEFT JOIN BookTitle bt ON bc.bookTitleId = bt.id
+    LEFT JOIN Transaction t ON bc.id = t.bookCopyId
+        AND t.returnedDate IS NULL
+        AND t.id = (
+            SELECT t2.id
+            FROM Transaction t2
+            WHERE t2.bookCopyId = bc.id
+                AND t2.returnedDate IS NULL
+            ORDER BY t2.borrowDate DESC
+            LIMIT 1
         )
-        FROM BookCopy bc
-        LEFT JOIN BookTitle bt ON bc.bookTitleId = bt.id
-        LEFT JOIN Transaction t ON bc.id = t.bookCopyId
-            AND t.returnedDate IS NULL
-            AND t.id = (
-                SELECT t2.id
-                FROM Transaction t2
-                WHERE t2.bookCopyId = bc.id
-                    AND t2.returnedDate IS NULL
-                ORDER BY t2.borrowDate DESC
-                LIMIT 1
-            )
-        LEFT JOIN User u ON t.userId = u.id
-        ORDER BY bc.id
-        """)
+    LEFT JOIN User u ON t.userId = u.id
+    ORDER BY bc.id
+    """)
     List<BookCopyWithDueInfoDto> findAllBookCopiesWithDueInfo();
 
     @Query("""
-        SELECT new com.todo.backend.dto.bookcopy.BookCopyWithDueInfoDto(
-               bc.id,
-               bc.status,
-               bc.condition,
-               bt.title,
-               bt.id,
-               t.dueDate,
-               t.borrowDate,
-               t.userId,
-               u.name,
-               CASE WHEN t.dueDate IS NOT NULL AND t.dueDate < CURRENT_DATE AND t.returnedDate IS NULL 
-                    THEN true 
-                    ELSE false 
-               END
+    SELECT new com.todo.backend.dto.bookcopy.BookCopyWithDueInfoDto(
+           bc.id,
+           bc.status,
+           bc.condition,
+           bt.title,
+           bt.id,
+           t.dueDate,
+           t.borrowDate,
+           t.userId,
+           u.name,
+           u.cccd,
+           CASE WHEN t.dueDate IS NOT NULL AND t.dueDate < CURRENT_DATE AND t.returnedDate IS NULL 
+                THEN true 
+                ELSE false 
+           END
+    )
+    FROM BookCopy bc
+    LEFT JOIN BookTitle bt ON bc.bookTitleId = bt.id
+    LEFT JOIN Transaction t ON bc.id = t.bookCopyId 
+        AND t.returnedDate IS NULL
+        AND t.id = (
+            SELECT t2.id 
+            FROM Transaction t2 
+            WHERE t2.bookCopyId = bc.id 
+                AND t2.returnedDate IS NULL
+            ORDER BY t2.borrowDate DESC 
+            LIMIT 1
         )
-        FROM BookCopy bc
-        LEFT JOIN BookTitle bt ON bc.bookTitleId = bt.id
-        LEFT JOIN Transaction t ON bc.id = t.bookCopyId 
-            AND t.returnedDate IS NULL
-            AND t.id = (
-                SELECT t2.id 
-                FROM Transaction t2 
-                WHERE t2.bookCopyId = bc.id 
-                    AND t2.returnedDate IS NULL
-                ORDER BY t2.borrowDate DESC 
-                LIMIT 1
-            )
-        LEFT JOIN User u ON t.userId = u.id
-        WHERE bc.id = :bookCopyId
-        """)
+    LEFT JOIN User u ON t.userId = u.id
+    WHERE bc.id = :bookCopyId
+    """)
     Optional<BookCopyWithDueInfoDto> findBookCopyWithDueInfo(@Param("bookCopyId") String bookCopyId);
 
     @Query("""
-        SELECT new com.todo.backend.dto.bookcopy.BookCopyWithDueInfoDto(
-               bc.id,
-               bc.status,
-               bc.condition,
-               bt.title,
-               bt.id,
-               t.dueDate,
-               t.borrowDate,
-               t.userId,
-               u.name,
-               true
+    SELECT new com.todo.backend.dto.bookcopy.BookCopyWithDueInfoDto(
+           bc.id,
+           bc.status,
+           bc.condition,
+           bt.title,
+           bt.id,
+           t.dueDate,
+           t.borrowDate,
+           t.userId,
+           u.name,
+           u.cccd,
+           true
+    )
+    FROM BookCopy bc
+    JOIN BookTitle bt ON bc.bookTitleId = bt.id
+    JOIN Transaction t ON bc.id = t.bookCopyId
+        AND t.returnedDate IS NULL
+        AND t.dueDate < CURRENT_DATE
+        AND t.id = (
+            SELECT t2.id
+            FROM Transaction t2
+            WHERE t2.bookCopyId = bc.id
+                AND t2.returnedDate IS NULL
+            ORDER BY t2.borrowDate DESC
+            LIMIT 1
         )
-        FROM BookCopy bc
-        JOIN BookTitle bt ON bc.bookTitleId = bt.id
-        JOIN Transaction t ON bc.id = t.bookCopyId
-            AND t.returnedDate IS NULL
-            AND t.dueDate < CURRENT_DATE
-            AND t.id = (
-                SELECT t2.id
-                FROM Transaction t2
-                WHERE t2.bookCopyId = bc.id
-                    AND t2.returnedDate IS NULL
-                ORDER BY t2.borrowDate DESC
-                LIMIT 1
-            )
-        JOIN User u ON t.userId = u.id
-        ORDER BY t.dueDate ASC
-        """)
+    JOIN User u ON t.userId = u.id
+    ORDER BY t.dueDate ASC
+    """)
     List<BookCopyWithDueInfoDto> findOverdueBookCopies();
 }
