@@ -15,6 +15,7 @@ public class BookCopyWithDueInfoDto {
     private String condition;
     private String bookTitle;
     private String bookTitleId;
+    private Integer bookPrice;
     private LocalDate dueDate;
     private LocalDate borrowDate;
     private String borrowerId;
