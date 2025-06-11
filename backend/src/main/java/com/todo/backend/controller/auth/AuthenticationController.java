@@ -42,6 +42,9 @@ public class AuthenticationController {
     // login route
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto req, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest().body(bindingResult.getFieldErrors());
+        }
         Authentication auth;
         try {
             auth = authManager.authenticate(

@@ -22,7 +22,9 @@ public class BookTitleController {
 
     public BookTitleController(BookTitleService bookTitleService) {
         this.bookTitleService = bookTitleService;
-    }    @GetMapping()
+    }
+
+    @GetMapping()
     public ResponseEntity<?> getAllBookTitles() {
         try {
             return ResponseEntity.ok(bookTitleService.getAllBookTitles());
@@ -94,7 +96,7 @@ public class BookTitleController {
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error updating book title: " + e.getMessage());
         }
-    }    
+    }
     
     @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @DeleteMapping("/{id}")

@@ -9,10 +9,7 @@ import com.todo.backend.dto.transaction.CreateTransactionDto;
 import com.todo.backend.dto.transaction.ResponseTransactionDto;
 import com.todo.backend.dto.transaction.UpdateTransactionDto;
 import com.todo.backend.dto.transactiondetail.ResponseTransactionDetailDto;
-import com.todo.backend.entity.BookCopy;
-import com.todo.backend.entity.Reservation;
-import com.todo.backend.entity.Transaction;
-import com.todo.backend.entity.User;
+import com.todo.backend.entity.*;
 import com.todo.backend.mapper.TransactionDetailMapper;
 import com.todo.backend.mapper.TransactionMapper;
 import jakarta.transaction.Transactional;
@@ -108,7 +105,7 @@ public class TransactionService {
         BookCopy bookCopy = bookCopyRepository.findById(bookCopyId)
                 .orElseThrow(() -> new RuntimeException("BookCopy with ID " + bookCopyId + " not found"));
 
-        if (!bookCopy.getStatus().equals("AVAILABLE")) {
+        if (!bookCopy.getStatus().equals(BookCopyStatus.AVAILABLE)) {
             throw new RuntimeException("BookCopy with ID " + bookCopyId + " is not available");
         }
 
@@ -136,7 +133,7 @@ public class TransactionService {
         }
 
         // Update book copy status and save transaction
-        bookCopy.setStatus("BORROWED");
+        bookCopy.setStatus(BookCopyStatus.BORROWED);
         bookCopyRepository.save(bookCopy);
 
         Transaction savedTransaction = transactionRepository.save(transaction);
@@ -160,7 +157,7 @@ public class TransactionService {
             BookCopy bookCopy = bookCopyRepository.findById(existingTransaction.getBookCopyId())
                     .orElseThrow(() -> new RuntimeException("BookCopy with ID " + existingTransaction.getBookCopyId() + " not found"));
 
-            bookCopy.setStatus("AVAILABLE");
+            bookCopy.setStatus(BookCopyStatus.AVAILABLE);
             bookCopyRepository.save(bookCopy);
 
             // Refund user balance
@@ -215,7 +212,7 @@ public class TransactionService {
         }
 
         // Validate book copy is available for borrowing
-        if (!"AVAILABLE".equals(bookCopy.getStatus())) {
+        if (!BookCopyStatus.AVAILABLE.equals(bookCopy.getStatus())) {
             throw new RuntimeException("Book copy is not available for borrowing. Current status: " + bookCopy.getStatus());
         }
 
@@ -262,7 +259,7 @@ public class TransactionService {
         transaction.setDueDate(today.plusWeeks(2)); // Default 2 weeks loan period
 
         // Update book copy status
-        bookCopy.setStatus("BORROWED");
+        bookCopy.setStatus(BookCopyStatus.BORROWED);
         bookCopyRepository.save(bookCopy);
 
         // Deduct remaining amount from user balance (deposit was already deducted during reservation)

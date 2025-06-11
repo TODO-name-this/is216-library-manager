@@ -7,14 +7,12 @@ import com.todo.backend.dao.UserRepository;
 import com.todo.backend.dto.reservation.CreateReservationDto;
 import com.todo.backend.dto.reservation.ResponseReservationDto;
 import com.todo.backend.dto.reservation.UpdateReservationDto;
-import com.todo.backend.entity.BookCopy;
-import com.todo.backend.entity.BookTitle;
-import com.todo.backend.entity.Reservation;
-import com.todo.backend.entity.User;
+import com.todo.backend.entity.*;
 import com.todo.backend.entity.identity.UserRole;
 import com.todo.backend.mapper.ReservationMapper;
 import com.todo.backend.scheduler.jobs.ReservationExpiryJob;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.quartz.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -27,6 +25,7 @@ import java.util.List;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class ReservationService {
     private final String RESERVATION_GROUP = "reservationGroup";
     private final String RESERVATION_EXPIRY_JOB_PREFIX = "reservationExpiryJob_";
@@ -39,14 +38,7 @@ public class ReservationService {
     private final ReservationMapper reservationMapper;
     private final Scheduler scheduler;
 
-    public ReservationService(ReservationRepository reservationRepository, BookCopyRepository bookCopyRepository, BookTitleRepository bookTitleRepository, UserRepository userRepository, ReservationMapper reservationMapper, Scheduler scheduler) {
-        this.reservationRepository = reservationRepository;
-        this.bookCopyRepository = bookCopyRepository;
-        this.bookTitleRepository = bookTitleRepository;
-        this.userRepository = userRepository;
-        this.reservationMapper = reservationMapper;
-        this.scheduler = scheduler;
-    }    public ResponseReservationDto getReservation(String id, String userId) {
+    public ResponseReservationDto getReservation(String id, String userId) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
 
@@ -227,7 +219,7 @@ public class ReservationService {
         if (reservation.getBookCopyId() != null) {
             BookCopy bookCopy = bookCopyRepository.findById(reservation.getBookCopyId())
                     .orElseThrow(() -> new RuntimeException("Book copy not found"));
-            bookCopy.setStatus("AVAILABLE");
+            bookCopy.setStatus(BookCopyStatus.AVAILABLE);
             bookCopyRepository.save(bookCopy);
         }
 
@@ -274,7 +266,6 @@ public class ReservationService {
 
         // Assign the book copy and update statuses
         reservation.setBookCopyId(availableBookCopy.getId());
-        availableBookCopy.setStatus("RESERVED");
         
         reservationRepository.save(reservation);
         bookCopyRepository.save(availableBookCopy);

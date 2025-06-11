@@ -1,5 +1,9 @@
 package com.todo.backend.dto.bookcopy;
 
+import com.todo.backend.entity.BookCopyCondition;
+import com.todo.backend.entity.BookCopyStatus;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import lombok.Builder;
 import lombok.Data;
 
@@ -8,9 +12,11 @@ import lombok.Data;
 public class ResponseBookCopyDto {
     private String id;
     private String bookTitleId;
-    private String status; // AVAILABLE, BORROWED, MAINTENANCE, LOST, DAMAGED
 
-    private String condition; // NEW, GOOD, WORN, DAMAGED
+    @Enumerated(EnumType.STRING)
+    private BookCopyStatus status;
+    @Enumerated(EnumType.STRING)
+    private BookCopyCondition condition;
 
     // Book Title Information
     private String bookTitle;

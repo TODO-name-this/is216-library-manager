@@ -19,10 +19,13 @@ public class BookCopy {
     private String bookTitleId;
 
     @Column(name = "STATUS")
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private BookCopyStatus status;
 
-    @Column(name = "CONDITION")
-    private String condition; // NEW, GOOD, WORN, DAMAGED
+    // escape column name to avoid SQL keyword conflict
+    @Column(name = "`CONDITION`")
+    @Enumerated(EnumType.STRING)
+    private BookCopyCondition condition;
 
     // Relationship with BookTitle
     @JsonIgnore
