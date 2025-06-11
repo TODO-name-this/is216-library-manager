@@ -32,7 +32,9 @@ public class BookTitle {
     private int price;
 
     @Column(name = "PUBLISHED_DATE")
-    private LocalDate publishedDate;    @Column(name = "PUBLISHER_ID")
+    private LocalDate publishedDate;
+
+    @Column(name = "PUBLISHER_ID")
     private String publisherId;
 
     // Inventory Management Fields

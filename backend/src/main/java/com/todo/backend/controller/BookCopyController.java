@@ -1,7 +1,7 @@
 package com.todo.backend.controller;
 
 import com.todo.backend.dao.BookCopyRepository;
-import com.todo.backend.dto.bookcopy.BookCopyDto;
+import com.todo.backend.dto.bookcopy.CreateBookCopyDto;
 import com.todo.backend.dto.bookcopy.ResponseBookCopyDto;
 import com.todo.backend.service.BookCopyService;
 import jakarta.validation.Valid;
@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Objects;
 
 @CrossOrigin("http://localhost:3000")
 @RestController
@@ -31,6 +33,7 @@ public class BookCopyController {
             return ResponseEntity.status(500).body("Error fetching book copies with due info: " + e.getMessage());
         }
     }
+
     // Endpoint to get overdue book copies
     // Endpoint: GET /api/bookCopy/overdue
     @GetMapping("/overdue")
@@ -41,6 +44,7 @@ public class BookCopyController {
             return ResponseEntity.status(500).body("Error fetching overdue book copies: " + e.getMessage());
         }
     }
+
     // Endpoint to get a book copy by ID with overdue information
     // Endpoint: GET /api/bookCopy/overdue/{bookCopyId}
     @GetMapping("/overdue/{bookCopyId}")
@@ -72,14 +76,14 @@ public class BookCopyController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createBookCopy(@Valid @RequestBody BookCopyDto bookCopyDto, BindingResult result) {
+    public ResponseEntity<?> createBookCopy(@Valid @RequestBody CreateBookCopyDto createBookCopyDto, BindingResult result) {
         try {
             if (result.hasErrors()) {
-                return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
+                return ResponseEntity.badRequest().body(Objects.requireNonNull(result.getFieldError()).getDefaultMessage());
             }
 
-            ResponseBookCopyDto createdBookCopy = bookCopyService.createBookCopy(bookCopyDto);
-            return ResponseEntity.ok(createdBookCopy);
+            var createdCopies = bookCopyService.createBookCopies(createBookCopyDto);
+            return ResponseEntity.ok(createdCopies);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error creating book copy: " + e.getMessage());
         }
@@ -92,6 +96,20 @@ public class BookCopyController {
             return ResponseEntity.ok("Book copy deleted successfully");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error deleting book copy: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateBookCopy(@PathVariable String id, @Valid @RequestBody CreateBookCopyDto bookCopyDto, BindingResult result) {
+        try {
+            if (result.hasErrors()) {
+                return ResponseEntity.badRequest().body(Objects.requireNonNull(result.getFieldError()).getDefaultMessage());
+            }
+
+            var updatedBookCopy = bookCopyService.updateBookCopy(id, bookCopyDto);
+            return ResponseEntity.ok(updatedBookCopy);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error updating book copy: " + e.getMessage());
         }
     }
 }

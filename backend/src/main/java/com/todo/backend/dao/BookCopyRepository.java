@@ -74,21 +74,21 @@ public interface BookCopyRepository extends JpaRepository<BookCopy, String> {
            t.userId,
            u.name,
            u.cccd,
-           CASE WHEN t.dueDate IS NOT NULL AND t.dueDate < CURRENT_DATE AND t.returnedDate IS NULL 
-                THEN true 
-                ELSE false 
+           CASE WHEN t.dueDate IS NOT NULL AND t.dueDate < CURRENT_DATE AND t.returnedDate IS NULL
+                THEN true
+                ELSE false
            END
     )
     FROM BookCopy bc
     LEFT JOIN BookTitle bt ON bc.bookTitleId = bt.id
-    LEFT JOIN Transaction t ON bc.id = t.bookCopyId 
+    LEFT JOIN Transaction t ON bc.id = t.bookCopyId
         AND t.returnedDate IS NULL
         AND t.id = (
-            SELECT t2.id 
-            FROM Transaction t2 
-            WHERE t2.bookCopyId = bc.id 
+            SELECT t2.id
+            FROM Transaction t2
+            WHERE t2.bookCopyId = bc.id
                 AND t2.returnedDate IS NULL
-            ORDER BY t2.borrowDate DESC 
+            ORDER BY t2.borrowDate DESC
             LIMIT 1
         )
     LEFT JOIN User u ON t.userId = u.id

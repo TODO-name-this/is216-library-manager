@@ -6,11 +6,7 @@ import com.todo.backend.dao.ReservationRepository;
 import com.todo.backend.dto.booktitle.BookTitleDto;
 import com.todo.backend.dto.booktitle.ResponseBookTitleDto;
 import com.todo.backend.dto.review.ResponseReviewDto;
-import com.todo.backend.entity.BookAuthor;
-import com.todo.backend.entity.BookCategory;
-import com.todo.backend.entity.BookCopy;
-import com.todo.backend.entity.BookTitle;
-import com.todo.backend.entity.Reservation;
+import com.todo.backend.entity.*;
 import com.todo.backend.mapper.BookTitleMapper;
 import com.todo.backend.mapper.ReviewMapper;
 import org.springframework.stereotype.Service;
@@ -261,10 +257,12 @@ public class BookTitleService {
 
         List<BookCopy> bookCopies = existingBookTitle.getBookCopies();
         for (BookCopy bookCopy : bookCopies) {
-            if (bookCopy.getStatus().equals("BORROWED") || bookCopy.getStatus().equals("RESERVED")) {
+            if (bookCopy.getStatus().equals(BookCopyStatus.BORROWED)) {
                 throw new IllegalArgumentException("Cannot delete book title with borrowed or reserved copies");
             }
-        }        bookTitleRepository.delete(existingBookTitle);
+        }
+
+        bookTitleRepository.delete(existingBookTitle);
     }
 
     /**
@@ -280,8 +278,8 @@ public class BookTitleService {
         for (int i = 1; i <= totalCopies; i++) {
             BookCopy bookCopy = new BookCopy();
             bookCopy.setBookTitleId(bookTitleId);
-            bookCopy.setStatus("AVAILABLE");
-            bookCopy.setCondition("NEW"); // Set default condition for auto-generated copies
+            bookCopy.setStatus(BookCopyStatus.AVAILABLE);
+            bookCopy.setCondition(BookCopyCondition.NEW);
             
             // Generate human-readable ID like "HARRYPOTTER001", "HARRYPOTTER002", etc.
             String copyNumber = String.format("%03d", i);
@@ -310,13 +308,11 @@ public class BookTitleService {
             // Remove excess available copies (only if they're available)
             int excessCopies = actualCopyCount - expectedCopyCount;
             List<BookCopy> availableCopies = actualCopies.stream()
-                    .filter(copy -> "AVAILABLE".equals(copy.getStatus()))
+                    .filter(copy -> BookCopyStatus.AVAILABLE.equals(copy.getStatus()))
                     .limit(excessCopies)
                     .toList();
-                    
-            for (BookCopy copy : availableCopies) {
-                bookCopyRepository.delete(copy);
-            }
+
+            bookCopyRepository.deleteAll(availableCopies);
         }
     }
 

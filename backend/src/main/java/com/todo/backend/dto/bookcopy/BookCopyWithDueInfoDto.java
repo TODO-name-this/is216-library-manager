@@ -1,5 +1,9 @@
 package com.todo.backend.dto.bookcopy;
 
+import com.todo.backend.entity.BookCopyCondition;
+import com.todo.backend.entity.BookCopyStatus;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,8 +15,10 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class BookCopyWithDueInfoDto {
     private String bookCopyId;
-    private String status;
-    private String condition;
+    @Enumerated(value = EnumType.STRING)
+    private BookCopyStatus status;
+    @Enumerated(value = EnumType.STRING)
+    private BookCopyCondition condition;
     private String bookTitle;
     private String bookTitleId;
     private Integer bookPrice;
