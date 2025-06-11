@@ -19,7 +19,8 @@ import java.util.List;
 
 @Service
 @Transactional
-public class BookCopyService {    private final BookCopyRepository bookCopyRepository;
+public class BookCopyService {
+    private final BookCopyRepository bookCopyRepository;
     private final BookTitleRepository bookTitleRepository;
     private final ReservationRepository reservationRepository;
     private final TransactionRepository transactionRepository;

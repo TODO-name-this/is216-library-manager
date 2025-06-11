@@ -5,22 +5,18 @@ import com.todo.backend.dto.user.ResponseUserDto;
 import com.todo.backend.dto.user.CreateUserDto;
 import com.todo.backend.service.UserService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @CrossOrigin("*")
 @RestController
 @RequestMapping("/api/user")
+@RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
-
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
 
     @PreAuthorize("#id == authentication.name or hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @GetMapping()
