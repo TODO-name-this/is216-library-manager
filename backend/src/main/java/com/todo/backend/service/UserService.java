@@ -4,6 +4,9 @@ import com.todo.backend.dao.UserRepository;
 import com.todo.backend.dto.user.PartialUpdateUserDto;
 import com.todo.backend.dto.user.ResponseUserDto;
 import com.todo.backend.dto.user.CreateUserDto;
+import com.todo.backend.dto.user.SelfUpdateUserDto;
+import com.todo.backend.dto.user.LibrarianUpdateUserDto;
+import com.todo.backend.dto.user.AdminUpdateUserDto;
 import com.todo.backend.entity.Transaction;
 import com.todo.backend.entity.User;
 import com.todo.backend.entity.identity.UserRole;
@@ -13,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -30,6 +34,50 @@ public class UserService {
     public List<ResponseUserDto> getAllUsers() {
         List<User> users = userRepository.findAll();
         return userMapper.toResponseDtoList(users);
+    }
+
+    public List<ResponseUserDto> searchUsers(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            // If no query provided, return all users
+            List<User> users = userRepository.findAll();
+            return userMapper.toResponseDtoList(users);
+        }
+        
+        String trimmedQuery = query.trim();
+        
+        // Priority 1: Exact CCCD match
+        Optional<User> exactCccdMatch = userRepository.findByCccd(trimmedQuery);
+        if (exactCccdMatch.isPresent()) {
+            return List.of(userMapper.toResponseDto(exactCccdMatch.get()));
+        }
+        
+        // Priority 2: Exact name match (case insensitive)
+        List<User> exactNameMatches = userRepository.findByNameIgnoreCase(trimmedQuery);
+        if (!exactNameMatches.isEmpty()) {
+            return userMapper.toResponseDtoList(exactNameMatches);
+        }
+        
+        // Priority 3: Exact email match (case insensitive)
+        List<User> exactEmailMatches = userRepository.findByEmailIgnoreCase(trimmedQuery);
+        if (!exactEmailMatches.isEmpty()) {
+            return userMapper.toResponseDtoList(exactEmailMatches);
+        }
+        
+        // Priority 4: Partial CCCD match
+        List<User> partialCccdMatches = userRepository.findByCccdContainingIgnoreCase(trimmedQuery);
+        if (!partialCccdMatches.isEmpty()) {
+            return userMapper.toResponseDtoList(partialCccdMatches);
+        }
+        
+        // Priority 5: Partial name match
+        List<User> partialNameMatches = userRepository.findByNameContainingIgnoreCase(trimmedQuery);
+        if (!partialNameMatches.isEmpty()) {
+            return userMapper.toResponseDtoList(partialNameMatches);
+        }
+        
+        // Priority 6: Partial email match
+        List<User> partialEmailMatches = userRepository.findByEmailContainingIgnoreCase(trimmedQuery);
+        return userMapper.toResponseDtoList(partialEmailMatches);
     }
 
     public ResponseUserDto getUser(String id) {
@@ -51,27 +99,81 @@ public class UserService {
         return userMapper.toResponseDto(user);
     }
 
-    public ResponseUserDto updateUser(String id, PartialUpdateUserDto partialUpdateUserDto) {
+    // Role-based user update (for admins and librarians)
+    public ResponseUserDto updateUserByRole(String id, LibrarianUpdateUserDto updateUserDto, String currentUserId) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User with this ID does not exist"));
 
-        userMapper.updateEntityFromDto(partialUpdateUserDto, existingUser);
-        validateUserRules(existingUser, existingUser.getId());
+        // Get current user's role
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Current user not found"));
 
-        String newPassword = partialUpdateUserDto.getNewPassword();
-        String oldPassword = partialUpdateUserDto.getOldPassword();
+        UserRole currentUserRole = currentUser.getRole();
 
-        if (newPassword != null && !newPassword.isBlank()) {
-            if (oldPassword == null || oldPassword.isBlank()) {
-                throw new IllegalArgumentException("Old password is required when setting a new password");
+        // Role-based restrictions
+        if (currentUserRole == UserRole.LIBRARIAN) {
+            // Librarians cannot edit admin or librarian users
+            if (existingUser.getRole() == UserRole.ADMIN || existingUser.getRole() == UserRole.LIBRARIAN) {
+                throw new IllegalArgumentException("Librarians cannot edit admin or librarian users");
             }
+        }
 
-            if (!passwordEncoder.matches(oldPassword, existingUser.getPassword())) {
-                throw new IllegalArgumentException("Old password is incorrect");
+        // Apply updates based on current user's role
+        if (currentUserRole == UserRole.ADMIN) {
+            // Admin can edit everything except password, but with role restrictions
+            AdminUpdateUserDto adminDto = AdminUpdateUserDto.builder()
+                    .cccd(updateUserDto.getCccd())
+                    .dob(updateUserDto.getDob())
+                    .avatarUrl(updateUserDto.getAvatarUrl())
+                    .name(updateUserDto.getName())
+                    .phone(updateUserDto.getPhone())
+                    .email(updateUserDto.getEmail())
+                    .role(updateUserDto.getRole()) // Include role field
+                    .balance(updateUserDto.getBalance())
+                    .build();
+            
+            // Admin cannot modify other admin users
+            if (existingUser.getRole() == UserRole.ADMIN) {
+                throw new IllegalArgumentException("Cannot modify admin users");
             }
+            
+            // Role validation: cannot promote to admin
+            if (updateUserDto.getRole() == UserRole.ADMIN) {
+                throw new IllegalArgumentException("Cannot promote users to admin role");
+            }
+            
+            userMapper.updateEntityFromAdminUpdateDto(adminDto, existingUser);
+        } else {
+            // Librarian can edit all fields except role and password
+            // If librarian tries to update role, throw error
+            if (updateUserDto.getRole() != null) {
+                throw new IllegalArgumentException("Librarians cannot modify user roles");
+            }
+            userMapper.updateEntityFromLibrarianUpdateDto(updateUserDto, existingUser);
+        }
 
-            String hashedNewPassword = passwordEncoder.encode(newPassword);
-            existingUser.setPassword(hashedNewPassword);
+        // Validate unique constraints
+        validateUserUniqueFields(updateUserDto.getEmail(), updateUserDto.getCccd(), id);
+
+        if (updateUserDto.getBalance() != null && updateUserDto.getBalance() < 0) {
+            throw new IllegalArgumentException("Balance cannot be negative");
+        }
+
+        userRepository.save(existingUser);
+        return userMapper.toResponseDto(existingUser);
+    }
+
+    // Self-update for logged-in users (limited fields)
+    public ResponseUserDto selfUpdateUser(String id, SelfUpdateUserDto selfUpdateUserDto) {
+        User existingUser = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User with this ID does not exist"));
+
+        userMapper.updateEntityFromSelfUpdateDto(selfUpdateUserDto, existingUser);
+        
+        // Only validate email uniqueness (CCCD and other restricted fields are not editable)
+        if (selfUpdateUserDto.getEmail() != null && 
+            userRepository.existsByEmailAndIdNot(selfUpdateUserDto.getEmail(), id)) {
+            throw new IllegalArgumentException("Email already exists");
         }
 
         userRepository.save(existingUser);
@@ -145,6 +247,16 @@ public class UserService {
 
         if (user.getBalance() < 0) {
             throw new IllegalArgumentException("Balance cannot be negative");
+        }
+    }
+
+    private void validateUserUniqueFields(String email, String cccd, String ignoreId) {
+        if (email != null && userRepository.existsByEmailAndIdNot(email, ignoreId)) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+
+        if (cccd != null && userRepository.existsByCccdAndIdNot(cccd, ignoreId)) {
+            throw new IllegalArgumentException("CCCD already exists");
         }
     }
 }

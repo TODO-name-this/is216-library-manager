@@ -1,15 +1,16 @@
 package com.todo.backend.controller;
 
-import com.todo.backend.dto.user.PartialUpdateUserDto;
-import com.todo.backend.dto.user.ResponseUserDto;
-import com.todo.backend.dto.user.CreateUserDto;
+import com.todo.backend.dto.user.*;
 import com.todo.backend.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Objects;
 
 @CrossOrigin("*")
 @RestController
@@ -25,6 +26,19 @@ public class UserController {
             return ResponseEntity.ok(userService.getAllUsers());
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error fetching users: " + e.getMessage());
+        }
+    }
+
+    // search endpoint to get users by query string with prioritized matching
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
+    @GetMapping("/search")
+    public ResponseEntity<?> searchUsers(
+        @RequestParam(required = false) String q
+    ) {
+        try {
+            return ResponseEntity.ok(userService.searchUsers(q));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error searching users: " + e.getMessage());
         }
     }
 
@@ -59,17 +73,33 @@ public class UserController {
         }
     }
 
-    // Only owner of the account or ADMIN/LIBRARIAN can update user details
-    // Only ADMIN can update ADMIN or LIBRARIAN users
-    @PreAuthorize(
-        "#id == authentication.name or " +
-        "hasAnyAuthority('ADMIN') or  " +
-        "(hasAnyAuthority('LIBRARIAN') and #partialUpdateUserDto.role.name() != 'LIBRARIAN' and #partialUpdateUserDto.role.name() != 'ADMIN')"
-    )
-    @PatchMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody PartialUpdateUserDto partialUpdateUserDto) {
+    // Self-update endpoint for authenticated users (limited fields)
+    @PatchMapping("/self")
+    public ResponseEntity<?> selfUpdateUser(@Valid @RequestBody SelfUpdateUserDto selfUpdateUserDto, BindingResult result, Authentication authentication) {
         try {
-            ResponseUserDto updatedUser = userService.updateUser(id, partialUpdateUserDto);
+            if (result.hasErrors()) {
+                return ResponseEntity.badRequest().body(Objects.requireNonNull(result.getFieldError()).getDefaultMessage());
+            }
+
+            String userId = authentication.getName();
+            ResponseUserDto updatedUser = userService.selfUpdateUser(userId, selfUpdateUserDto);
+            return ResponseEntity.ok(updatedUser);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error updating user: " + e.getMessage());
+        }
+    }
+
+    // Role-based user update endpoint for ADMIN/LIBRARIAN
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> updateUserByRole(@PathVariable String id, @Valid @RequestBody LibrarianUpdateUserDto updateUserDto, BindingResult result, Authentication authentication) {
+        try {
+            if (result.hasErrors()) {
+                return ResponseEntity.badRequest().body(Objects.requireNonNull(result.getFieldError()).getDefaultMessage());
+            }
+
+            String currentUserId = authentication.getName();
+            ResponseUserDto updatedUser = userService.updateUserByRole(id, updateUserDto, currentUserId);
             return ResponseEntity.ok(updatedUser);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error updating user: " + e.getMessage());
