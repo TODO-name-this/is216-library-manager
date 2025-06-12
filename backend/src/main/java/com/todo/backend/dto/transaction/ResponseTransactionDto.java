@@ -16,5 +16,9 @@ public class ResponseTransactionDto {
     private String bookCopyId;
     private LocalDate returnedDate;
 
+    // Additional fields for enhanced response
+    private String userName;
+    private String bookTitle;
+
     private ResponseTransactionDetailDto transactionDetail;
 }

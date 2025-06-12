@@ -1356,7 +1356,7 @@ Reservations are valid until their `expirationDate`. After this date, they are a
 -   **Business Logic:**
     -   Validates reservation exists and gets user information
     -   Validates the librarian-selected book copy matches the reserved book title
-    -   Enforces business rules: max 5 books per user, no duplicate book titles
+    -   Enforces business rules: no duplicate book titles per user
     -   Calculates remaining payment (total price minus deposit already paid)
     -   Updates book copy status to "BORROWED"
     -   Deletes the reservation after successful transaction creation
