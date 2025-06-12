@@ -3,6 +3,7 @@ package com.todo.backend.dao;
 import com.todo.backend.entity.Reservation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
 import java.time.LocalDate;
@@ -25,4 +26,12 @@ public interface ReservationRepository extends JpaRepository<Reservation, String
     // Find expired reservations for cleanup
     @Query("SELECT r FROM Reservation r WHERE r.expirationDate < :currentDate")
     List<Reservation> findExpiredReservations(LocalDate currentDate);
+
+    @Query("SELECT r FROM Reservation r WHERE r.userId = :userId "
+            + "AND r.bookTitleId = :bookTitleId "
+            + "AND (r.expirationDate >= :today)")
+    List<Reservation> findActiveReservationsByUserIdAndBookTitleId(
+            @Param("userId") String userId,
+            @Param("bookTitleId") String bookTitleId,
+            @Param("today") LocalDate today);
 }

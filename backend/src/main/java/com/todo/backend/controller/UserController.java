@@ -70,7 +70,7 @@ public class UserController {
         "hasAnyAuthority('ADMIN') or  " +
         "(hasAnyAuthority('LIBRARIAN') and #partialUpdateUserDto.role.name() != 'LIBRARIAN' and #partialUpdateUserDto.role.name() != 'ADMIN')"
     )
-    @PatchMapping("/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody PartialUpdateUserDto partialUpdateUserDto) {
         try {
             ResponseUserDto updatedUser = userService.updateUser(id, partialUpdateUserDto);
@@ -79,7 +79,6 @@ public class UserController {
             return ResponseEntity.status(500).body("Error updating user: " + e.getMessage());
         }
     }
-
     // Only ADMIN and LIBRARIAN can delete users
     // Only ADMIN can delete ADMIN or LIBRARIAN users
     @PreAuthorize("@userService.canDeleteUser(#id, authentication.name)")

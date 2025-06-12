@@ -26,7 +26,9 @@ public class AuthorService {
     public List<ResponseAuthorDto> getAllAuthors() {
         List<Author> authors = authorRepository.findAll();
         return authorMapper.toResponseDtoList(authors);
-    }    public ResponseAuthorDto getAuthor(String id) {
+    }
+
+    public ResponseAuthorDto getAuthor(String id) {
         Author author = authorRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Author with this ID does not exist"));        ResponseAuthorDto responseAuthorDto = authorMapper.toResponseDto(author);
         

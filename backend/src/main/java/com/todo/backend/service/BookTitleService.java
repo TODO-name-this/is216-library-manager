@@ -152,8 +152,9 @@ public class BookTitleService {
         responseBookTitleDto.setMaxOnlineReservations(maxOnlineReservations);        // Set user-specific information (only for authenticated users with USER role)
         if (currentUserId != null && isUserRole) {
             // Get user's total active reservations across all books (this shows global user reservation count)
-            List<Reservation> userTotalReservations = reservationRepository.findActiveReservationsByUserId(currentUserId, today);
-            responseBookTitleDto.setUserReservationsForThisBook(userTotalReservations.size()); // Note: despite field name, this is total user reservations
+            List<Reservation> userReservationsForBook = reservationRepository
+                    .findActiveReservationsByUserIdAndBookTitleId(currentUserId, id, today);
+            responseBookTitleDto.setUserReservationsForThisBook(userReservationsForBook.size());// Note: despite field name, this is total user reservations
             responseBookTitleDto.setMaxUserReservations(5); // Business rule: max 5 reservations per user
         }
 
