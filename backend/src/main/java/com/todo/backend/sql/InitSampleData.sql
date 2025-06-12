@@ -49,9 +49,10 @@ CREATE TABLE `PUBLISHER` (
 CREATE TABLE `USER` (
   `ID` varchar(36) NOT NULL,
   `CCCD` char(15) NOT NULL,
-  `DOB` date NOT NULL,
+  `DOB` date DEFAULT NULL,
   `AVATAR_URL` text DEFAULT NULL,
   `NAME` varchar(255) NOT NULL,
+  `PHONE` varchar(15) DEFAULT NULL,
   `EMAIL` varchar(255) NOT NULL,
   `PASSWORD` varchar(255),
   `ROLE` varchar(50) DEFAULT 'USER',
@@ -422,15 +423,15 @@ INSERT INTO `BOOK_CATEGORY` (`BOOK_TITLE_ID`, `CATEGORY_ID`) VALUES
 ('b25', 'c4');
 
 -- 8. Insert Users
-INSERT INTO `USER` (`ID`, `NAME`, `CCCD`, `DOB`, `EMAIL`, `PASSWORD`, `ROLE`, `BALANCE`)VALUES
+INSERT INTO `USER` (`ID`, `NAME`, `CCCD`, `DOB`, `PHONE`, `EMAIL`, `PASSWORD`, `ROLE`, `BALANCE`)VALUES
 -- password is password
-('u1', 'Admin', '012345678901', '2005-12-22', 'admin@library.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'ADMIN', 0),
-('u2', 'John Doe', '012345678902', '2001-02-12', 'john@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'LIBRARIAN', 0),
-('u3', 'Jane Smith', '012345678903', '2000-01-01', 'jane@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'USER', 3500000),
-('u4', 'Bob Johnson', '012345678904', '1998-05-11', 'bob@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'USER', 7200000),
-('u5', 'Alice Williams', '012345678905', '2003-09-14', 'alice@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'USER', 1800000),
-('u6', 'Michael Brown', '012345678906', '2005-09-14', 'michael@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'USER', 5500000),
-('u7', 'Emily Davis', '012345678907', '2008-11-25', 'emily@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'USER', 2750000);
+('u1', 'Admin', 'admin', '1985-12-22', '0901234567', 'admin@library.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'ADMIN', 0),
+('u2', 'John Doe', 'lib', '1990-02-12', '0901234568', 'john@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'LIBRARIAN', 0),
+('u3', 'Jane Smith', 'user', '1992-01-01', '0901234569', 'jane@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'USER', 3500000),
+('u4', 'Bob Johnson', '012345678904', '1988-05-11', '0901234570', 'bob@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'USER', 7200000),
+('u5', 'Alice Williams', '012345678905', '1995-09-14', '0901234571', 'alice@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'USER', 1800000),
+('u6', 'Michael Brown', '012345678906', '1993-09-14', '0901234572', 'michael@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'USER', 5500000),
+('u7', 'Emily Davis', '012345678907', '1996-11-25', '0901234573', 'emily@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'USER', 2750000);
 
 -- 9. Insert Reviews
 INSERT INTO `REVIEW` (`ID`, `USER_ID`, `BOOK_TITLE_ID`, `STAR`, `COMMENT`, `DATE`) VALUES

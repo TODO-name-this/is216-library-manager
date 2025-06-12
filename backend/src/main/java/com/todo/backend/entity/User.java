@@ -28,8 +28,11 @@ public class User {
     @Column(name = "NAME")
     private String name;
 
-    @Column(name = "DOB")
+    @Column(name = "DOB", nullable = true)
     private LocalDate dob;
+
+    @Column(name = "PHONE")
+    private String phone;
 
     @Column(name = "EMAIL", unique = true)
     private String email;

@@ -14,6 +14,7 @@ public class ResponseUserDto {
     private LocalDate dob;
     private String avatarUrl;
     private String name;
+    private String phone;
     private String email;
     private UserRole role;
     private int balance;

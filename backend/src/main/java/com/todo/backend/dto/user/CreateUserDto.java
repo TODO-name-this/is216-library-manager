@@ -23,6 +23,9 @@ public class CreateUserDto {
     @NotBlank(message = "Name is required")
     private String name;
 
+    @Size(min = 10, max = 15, message = "Phone number must be between 10 and 15 digits")
+    private String phone;
+
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
     private String email;
