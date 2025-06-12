@@ -4,6 +4,8 @@ import com.todo.backend.dto.transaction.CreateTransactionDto;
 import com.todo.backend.dto.transaction.CreateTransactionFromReservationDto;
 import com.todo.backend.dto.transaction.ResponseTransactionDto;
 import com.todo.backend.dto.transaction.UpdateTransactionDto;
+import com.todo.backend.dto.transaction.ReturnBookDto;
+import com.todo.backend.dto.transaction.ReturnBookResponseDto;
 import com.todo.backend.service.TransactionService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -110,6 +112,21 @@ public class TransactionController {
             return ResponseEntity.ok("Transaction deleted successfully");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error deleting transaction: " + e.getMessage());
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
+    @PutMapping("/{id}/return")
+    public ResponseEntity<?> returnBook(@PathVariable String id, @Valid @RequestBody ReturnBookDto returnBookDto, BindingResult result) {
+        try {
+            if (result.hasErrors()) {
+                return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
+            }
+
+            ReturnBookResponseDto response = transactionService.returnBook(id, returnBookDto);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error returning book: " + e.getMessage());
         }
     }
 }
