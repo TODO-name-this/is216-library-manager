@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -30,6 +31,50 @@ public class UserService {
     public List<ResponseUserDto> getAllUsers() {
         List<User> users = userRepository.findAll();
         return userMapper.toResponseDtoList(users);
+    }
+
+    public List<ResponseUserDto> searchUsers(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            // If no query provided, return all users
+            List<User> users = userRepository.findAll();
+            return userMapper.toResponseDtoList(users);
+        }
+        
+        String trimmedQuery = query.trim();
+        
+        // Priority 1: Exact CCCD match
+        Optional<User> exactCccdMatch = userRepository.findByCccd(trimmedQuery);
+        if (exactCccdMatch.isPresent()) {
+            return List.of(userMapper.toResponseDto(exactCccdMatch.get()));
+        }
+        
+        // Priority 2: Exact name match (case insensitive)
+        List<User> exactNameMatches = userRepository.findByNameIgnoreCase(trimmedQuery);
+        if (!exactNameMatches.isEmpty()) {
+            return userMapper.toResponseDtoList(exactNameMatches);
+        }
+        
+        // Priority 3: Exact email match (case insensitive)
+        List<User> exactEmailMatches = userRepository.findByEmailIgnoreCase(trimmedQuery);
+        if (!exactEmailMatches.isEmpty()) {
+            return userMapper.toResponseDtoList(exactEmailMatches);
+        }
+        
+        // Priority 4: Partial CCCD match
+        List<User> partialCccdMatches = userRepository.findByCccdContainingIgnoreCase(trimmedQuery);
+        if (!partialCccdMatches.isEmpty()) {
+            return userMapper.toResponseDtoList(partialCccdMatches);
+        }
+        
+        // Priority 5: Partial name match
+        List<User> partialNameMatches = userRepository.findByNameContainingIgnoreCase(trimmedQuery);
+        if (!partialNameMatches.isEmpty()) {
+            return userMapper.toResponseDtoList(partialNameMatches);
+        }
+        
+        // Priority 6: Partial email match
+        List<User> partialEmailMatches = userRepository.findByEmailContainingIgnoreCase(trimmedQuery);
+        return userMapper.toResponseDtoList(partialEmailMatches);
     }
 
     public ResponseUserDto getUser(String id) {

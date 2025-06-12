@@ -28,6 +28,19 @@ public class UserController {
         }
     }
 
+    // search endpoint to get users by query string with prioritized matching
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
+    @GetMapping("/search")
+    public ResponseEntity<?> searchUsers(
+        @RequestParam(required = false) String q
+    ) {
+        try {
+            return ResponseEntity.ok(userService.searchUsers(q));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error searching users: " + e.getMessage());
+        }
+    }
+
     @PreAuthorize("#id == authentication.name or hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @GetMapping("/{id}")
     public ResponseEntity<?> getUser(@PathVariable String id) {

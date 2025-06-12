@@ -17,6 +17,15 @@ public interface UserRepository extends JpaRepository<User, String> {
     Optional<User> findByCccd(@RequestParam("cccd") String cccd);
     Page<User> findByNameContainingIgnoreCase(@RequestParam("name") String name, Pageable pageable);
 
+    // Simple test methods
+    List<User> findByNameContainingIgnoreCase(String name);
+    List<User> findByCccdContainingIgnoreCase(String cccd);
+    List<User> findByEmailContainingIgnoreCase(String email);
+
+    // Exact match methods
+    List<User> findByNameIgnoreCase(String name);
+    List<User> findByEmailIgnoreCase(String email);
+
     boolean existsByEmail(String email);
     boolean existsByEmailAndIdNot(String email, String id);
     boolean existsByCccd(String cccd);
