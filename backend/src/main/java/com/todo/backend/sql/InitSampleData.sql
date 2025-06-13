@@ -166,6 +166,20 @@ CREATE TABLE `RESERVATION` (
   CONSTRAINT `FK_RESERVATION_BOOK_COPY` FOREIGN KEY (`BOOK_COPY_ID`) REFERENCES `BOOK_COPY` (`ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `balance_transactions` (
+  `id` varchar(36) NOT NULL,
+  `user_id` varchar(36) NOT NULL,
+  `type` varchar(50) NOT NULL,
+  `amount` int NOT NULL,
+  `description` varchar(500) NOT NULL,
+  `timestamp` datetime NOT NULL,
+  `balance_after` int NOT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'COMPLETED',
+  PRIMARY KEY (`id`),
+  KEY `FK_BALANCE_TRANSACTION_USER` (`user_id`),
+  CONSTRAINT `FK_BALANCE_TRANSACTION_USER` FOREIGN KEY (`user_id`) REFERENCES `USER` (`ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Insert sample data
 -- 1. Insert Categories
 INSERT INTO `CATEGORY` (`ID`, `NAME`, `DESCRIPTION`) VALUES
@@ -433,46 +447,78 @@ INSERT INTO `USER` (`ID`, `NAME`, `CCCD`, `DOB`, `PHONE`, `EMAIL`, `PASSWORD`, `
 ('u6', 'Michael Brown', '012345678906', '1993-09-14', '0901234572', 'michael@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'USER', 5500000),
 ('u7', 'Emily Davis', '012345678907', '1996-11-25', '0901234573', 'emily@example.com', '$2b$12$glHMHujIg84/uCQ/8Myrm.r6Dp3.RTh60BJlyDrSYowXsl5/Sc5gK', 'USER', 2750000);
 
--- 9. Insert Reviews
+-- 9. Insert Reviews (only users who actually borrowed books can review)
 INSERT INTO `REVIEW` (`ID`, `USER_ID`, `BOOK_TITLE_ID`, `STAR`, `COMMENT`, `DATE`) VALUES
-('r1', 'u2', 'b6', 5, 'A must-read for software developers. Changed how I think about code.', '2023-01-15'),
-('r2', 'u3', 'b6', 4, 'Great principles but some examples are outdated.', '2023-02-10'),
-('r3', 'u4', 'b7', 5, 'Finally understood closures after reading this.', '2023-01-20'),
-('r4', 'u5', 'b8', 5, 'Classic book on design patterns. Still relevant today.', '2023-03-05'),
-('r5', 'u6', 'b9', 4, 'Great insights on JavaScript good practices.', '2023-02-15'),
-('r6', 'u7', 'b10', 5, 'Changed how I think about UX design. Simple and effective.', '2023-01-10'),
-('r7', 'u2', 'b13', 4, 'Excellent introduction to JavaScript programming.', '2023-03-15'),
-('r8', 'u3', 'b15', 5, 'Best React book I\'ve read. Great examples.', '2023-02-20'),
-('r9', 'u4', 'b16', 4, 'Makes algorithms accessible and fun to learn.', '2023-01-25'),
-('r10', 'u5', 'b17', 5, 'Comprehensive guide to modern data systems.', '2023-03-10');
+('r1', 'u3', 'b6', 5, 'A must-read for software developers. Changed how I think about code.', '2023-01-15'),
+('r2', 'u4', 'b6', 4, 'Great principles but some examples are outdated.', '2023-02-10'),
+('r3', 'u5', 'b7', 5, 'Finally understood closures after reading this.', '2023-01-20'),
+('r4', 'u6', 'b8', 5, 'Classic book on design patterns. Still relevant today.', '2023-03-05'),
+('r5', 'u7', 'b9', 4, 'Great insights on JavaScript good practices.', '2023-02-15'),
+('r6', 'u3', 'b10', 5, 'Changed how I think about UX design. Simple and effective.', '2023-01-10'),
+('r7', 'u4', 'b13', 4, 'Excellent introduction to JavaScript programming.', '2023-03-15'),
+('r8', 'u5', 'b15', 5, 'Best React book I\'ve read. Great examples.', '2023-02-20'),
+('r9', 'u6', 'b16', 4, 'Makes algorithms accessible and fun to learn.', '2023-01-25'),
+('r10', 'u7', 'b17', 5, 'Comprehensive guide to modern data systems.', '2023-03-10');
 
 -- 10. Insert Transactions
 
--- 10. Insert Transactions (now with BOOK_COPY_ID and RETURNED_DATE)
+-- 10. Insert Transactions (only regular users borrow books, not admin/librarian)
 INSERT INTO `TRANSACTION` (`ID`, `USER_ID`, `BORROW_DATE`, `DUE_DATE`, `BOOK_COPY_ID`, `RETURNED_DATE`) VALUES
-('t1', 'u2', '2023-01-01', '2023-01-15', 'bc1-1', NULL),
-('t2', 'u3', '2023-01-05', '2023-01-19', 'bc3-1', NULL),
-('t3', 'u4', '2023-01-10', '2023-01-24', 'bc5-1', NULL),
-('t4', 'u5', '2023-01-15', '2023-01-29', 'bc7-1', NULL),
-('t5', 'u6', '2023-01-20', '2023-02-03', 'bc9-1', NULL),
-('t6', 'u7', '2023-01-25', '2023-02-08', 'bc11-1', NULL),
-('t7', 'u2', '2023-02-01', '2023-02-15', 'bc13-1', NULL),
-('t8', 'u3', '2023-02-05', '2023-02-19', 'bc15-1', NULL);
+('t1', 'u3', '2023-01-01', '2023-01-15', 'bc1-1', NULL),      -- Jane Smith still has book (overdue)
+('t2', 'u3', '2023-01-05', '2023-01-19', 'bc3-1', '2025-06-12'), -- Jane returned late with penalty
+('t3', 'u4', '2023-01-10', '2023-01-24', 'bc5-1', '2025-06-12'), -- Bob returned late with penalty  
+('t4', 'u5', '2023-01-15', '2023-01-29', 'bc7-1', NULL),      -- Alice still has book (overdue)
+('t5', 'u6', '2023-01-20', '2023-02-03', 'bc9-1', NULL),      -- Michael still has book (overdue)
+('t6', 'u7', '2023-01-25', '2023-02-08', 'bc11-1', NULL),     -- Emily still has book (overdue)
+('t7', 'u4', '2023-02-01', '2023-02-15', 'bc13-1', NULL),     -- Bob has second book (overdue)
+('t8', 'u3', '2023-02-05', '2023-02-19', 'bc15-1', NULL);     -- Jane has second book (overdue)
 
--- 11. Insert Transaction Details (only for damaged/lost/penalty, example row)
--- Example: t1 had a penalty
+-- 11. Insert Transaction Details (only for returned books with penalties)
 INSERT INTO `TRANSACTION_DETAIL` (`TRANSACTION_ID`, `PENALTY_FEE`, `DESCRIPTION`) VALUES
-('t1', 50000, 'Book returned with torn pages');
+('t2', 4385000, 'Late fee: 4,375,000 VND. Additional fee: 10,000 VND. Bruh'),
+('t3', 4360000, 'Late fee: 4,350,000 VND. Additional fee: 10,000 VND. Bong bìa, bay 1 trang giấy');
 
--- 12 Insert Reservations
+-- 12. Insert Reservations (only regular users make reservations)
 INSERT INTO `RESERVATION` (`ID`, `USER_ID`, `BOOK_TITLE_ID`, `BOOK_COPY_ID`, `RESERVATION_DATE`, `EXPIRATION_DATE`, `DEPOSIT`) VALUES
-('res1', 'u2', 'b21', 'bc21-2', '2023-03-15', '2023-03-22', 45000),
-('res2', 'u3', 'b22', 'bc22-2', '2023-03-16', '2023-03-23', 42000),
-('res3', 'u4', 'b23', NULL, '2023-03-17', '2023-03-24', 41000),
-('res4', 'u5', 'b24', NULL, '2023-03-18', '2023-03-25', 36500),
-('res5', 'u6', 'b25', 'bc25-2', '2023-03-19', '2023-03-26', 33500),
-('res6', 'u7', 'b1', NULL, '2023-03-20', '2023-03-27', 50000),
-('res7', 'u2', 'b2', NULL, '2023-03-21', '2023-03-28', 42000);
+('res1', 'u3', 'b21', 'bc21-2', '2023-03-15', '2023-03-22', 675000),
+('res2', 'u4', 'b22', 'bc22-2', '2023-03-16', '2023-03-23', 465000),
+('res3', 'u5', 'b23', NULL, '2023-03-17', '2023-03-24', 410000),
+('res4', 'u6', 'b24', NULL, '2023-03-18', '2023-03-25', 365000),
+('res5', 'u7', 'b25', 'bc25-2', '2023-03-19', '2023-03-26', 335000),
+('res6', 'u3', 'b1', NULL, '2023-03-20', '2023-03-27', 85000),
+('res7', 'u4', 'b2', NULL, '2023-03-21', '2023-03-28', 95000);
+
+-- 13. Insert Balance Transaction History (example transaction logs)
+INSERT INTO `balance_transactions` (`id`, `user_id`, `type`, `amount`, `description`, `timestamp`, `balance_after`, `status`) VALUES
+-- Jane Smith (u3) transaction history
+('bt1', 'u3', 'DEPOSIT', 5000000, 'Nạp tiền lần đầu - Tạo tài khoản', '2022-12-01 08:30:00', 5000000, 'COMPLETED'),
+('bt2', 'u3', 'BOOK_RENTAL', -85000, 'Mượn sách: Pháp luật đại cương', '2023-01-01 09:00:00', 4915000, 'COMPLETED'),
+('bt3', 'u3', 'BOOK_RENTAL', -75000, 'Mượn sách: Tư tưởng Hồ Chí Minh', '2023-01-05 10:30:00', 4840000, 'COMPLETED'),
+('bt4', 'u3', 'PENALTY_FEE', -4300000, 'Phí phạt thêm cho: Tư tưởng Hồ Chí Minh', '2025-06-12 14:20:00', 540000, 'COMPLETED'),
+('bt5', 'u3', 'BOOK_RENTAL', -435000, 'Mượn sách: Learning React', '2023-02-05 11:15:00', 105000, 'COMPLETED'),
+('bt6', 'u3', 'DEPOSIT', 3395000, 'Nạp tiền bổ sung', '2025-06-10 09:00:00', 3500000, 'COMPLETED'),
+
+-- Bob Johnson (u4) transaction history  
+('bt7', 'u4', 'DEPOSIT', 10000000, 'Nạp tiền lần đầu - Tạo tài khoản', '2022-11-15 10:00:00', 10000000, 'COMPLETED'),
+('bt8', 'u4', 'BOOK_RENTAL', -82000, 'Mượn sách: Chủ nghĩa xã hội khoa học', '2023-01-10 14:00:00', 9918000, 'COMPLETED'),
+('bt9', 'u4', 'PENALTY_FEE', -4278000, 'Phí phạt thêm cho: Chủ nghĩa xã hội khoa học', '2025-06-12 15:30:00', 5640000, 'COMPLETED'),
+('bt10', 'u4', 'BOOK_RENTAL', -380000, 'Mượn sách: Eloquent JavaScript', '2023-02-01 16:20:00', 5260000, 'COMPLETED'),
+('bt11', 'u4', 'DEPOSIT', 1940000, 'Nạp tiền bổ sung', '2025-06-11 08:00:00', 7200000, 'COMPLETED'),
+
+-- Alice Williams (u5) transaction history
+('bt12', 'u5', 'DEPOSIT', 3000000, 'Nạp tiền lần đầu - Tạo tài khoản', '2022-12-20 14:30:00', 3000000, 'COMPLETED'),
+('bt13', 'u5', 'BOOK_RENTAL', -320000, 'Mượn sách: You Don\'t Know JS: Scope & Closures', '2023-01-15 09:45:00', 2680000, 'COMPLETED'),
+('bt14', 'u5', 'PENALTY_FEE', -880000, 'Phí phạt: Trả sách muộn 64 ngày', '2025-06-13 10:15:00', 1800000, 'COMPLETED'),
+
+-- Michael Brown (u6) transaction history
+('bt15', 'u6', 'DEPOSIT', 8000000, 'Nạp tiền lần đầu - Tạo tài khoản', '2023-01-01 12:00:00', 8000000, 'COMPLETED'),
+('bt16', 'u6', 'BOOK_RENTAL', -295000, 'Mượn sách: JavaScript: The Good Parts', '2023-01-20 13:30:00', 7705000, 'COMPLETED'),
+('bt17', 'u6', 'PENALTY_FEE', -2205000, 'Phí phạt: Trả sách muộn 99 ngày', '2025-06-13 11:00:00', 5500000, 'COMPLETED'),
+
+-- Emily Davis (u7) transaction history
+('bt18', 'u7', 'DEPOSIT', 4000000, 'Nạp tiền lần đầu - Tạo tài khoản', '2023-01-10 15:20:00', 4000000, 'COMPLETED'),
+('bt19', 'u7', 'BOOK_RENTAL', -495000, 'Mượn sách: The Pragmatic Programmer', '2023-01-25 16:45:00', 3505000, 'COMPLETED'),
+('bt20', 'u7', 'PENALTY_FEE', -755000, 'Phí phạt: Trả sách muộn 87 ngày', '2025-06-13 12:30:00', 2750000, 'COMPLETED');
 
 
 
