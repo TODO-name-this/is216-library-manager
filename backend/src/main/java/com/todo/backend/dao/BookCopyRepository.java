@@ -2,6 +2,7 @@ package com.todo.backend.dao;
 
 import com.todo.backend.dto.bookcopy.BookCopyWithDueInfoDto;
 import com.todo.backend.entity.BookCopy;
+import com.todo.backend.entity.BookCopyStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,7 +23,7 @@ public interface BookCopyRepository extends JpaRepository<BookCopy, String> {
     @Query("SELECT b FROM BookCopy bc JOIN bc.bookTitleId b WHERE bc.bookTitleId = :bookTitleId AND bc.status = :status")
     Page<BookCopy> findByBookTitleIdAndStatus(@RequestParam("bookTitleId") String bookTitleId, @RequestParam("status") String status, Pageable pageable);
 
-    BookCopy findFirstByBookTitleIdAndStatus(String bookTitleId, String status);
+    BookCopy findFirstByBookTitleIdAndStatus(String bookTitleId, BookCopyStatus status);
     
     List<BookCopy> findByBookTitleId(String bookTitleId);
 
