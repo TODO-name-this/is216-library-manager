@@ -31,8 +31,9 @@ public class TransactionService {
     private final ReservationRepository reservationRepository;
     private final TransactionMapper transactionMapper;
     private final TransactionDetailMapper transactionDetailMapper;
+    private final BalanceTransactionService balanceTransactionService;
 
-    public TransactionService(TransactionRepository transactionRepository, TransactionDetailRepository transactionDetailRepository, BookCopyRepository bookCopyRepository, UserRepository userRepository, ReservationRepository reservationRepository, TransactionMapper transactionMapper, TransactionDetailMapper transactionDetailMapper) {
+    public TransactionService(TransactionRepository transactionRepository, TransactionDetailRepository transactionDetailRepository, BookCopyRepository bookCopyRepository, UserRepository userRepository, ReservationRepository reservationRepository, TransactionMapper transactionMapper, TransactionDetailMapper transactionDetailMapper, BalanceTransactionService balanceTransactionService) {
         this.transactionRepository = transactionRepository;
         this.transactionDetailRepository = transactionDetailRepository;
         this.bookCopyRepository = bookCopyRepository;
@@ -40,6 +41,7 @@ public class TransactionService {
         this.reservationRepository = reservationRepository;
         this.transactionMapper = transactionMapper;
         this.transactionDetailMapper = transactionDetailMapper;
+        this.balanceTransactionService = balanceTransactionService;
     }
 
     public ResponseTransactionDto getTransaction(String id) {
@@ -145,11 +147,18 @@ public class TransactionService {
         bookCopy.setStatus(BookCopyStatus.BORROWED);
         bookCopyRepository.save(bookCopy);
 
-        Transaction savedTransaction = transactionRepository.save(transaction);
-
-        // Deduct the price from user's balance
+        Transaction savedTransaction = transactionRepository.save(transaction);        // Deduct the price from user's balance
         user.setBalance(user.getBalance() - totalPrice);
         userRepository.save(user);
+        
+        // Log balance transaction
+        balanceTransactionService.logTransaction(
+            user.getId(), 
+            BalanceTransactionType.BOOK_RENTAL, 
+            -totalPrice, 
+            "Mượn sách: " + bookCopy.getBookTitle().getTitle(),
+            user.getBalance()
+        );
 
         ResponseTransactionDto responseTransactionDto = transactionMapper.toResponseDto(savedTransaction);
 
@@ -343,20 +352,38 @@ public class TransactionService {
         if (totalPenaltyFee > 0 || returnBookDto.getDescription() != null) {
             String description = buildPenaltyDescription(automaticLateFee, additionalPenalty, returnBookDto.getDescription(), isLost, bookPrice);
             transactionDetail = createTransactionDetail(transactionId, totalPenaltyFee, description);
-        }
-
-        // Update user balance: user gets refund of (book price - penalty) or pays extra if penalty > book price
+        }        // Update user balance: user gets refund of (book price - penalty) or pays extra if penalty > book price
         int refundAmount = 0;
         int extraCharge = 0;
-        
-        if (totalPenaltyFee <= bookPrice) {
+        int previousBalance = user.getBalance();
+          if (totalPenaltyFee <= bookPrice) {
             // Penalty is covered by deposit, give partial refund
             refundAmount = bookPrice - totalPenaltyFee;
             user.setBalance(user.getBalance() + refundAmount);
+            
+            // Log balance transaction
+            if (refundAmount > 0) {
+                balanceTransactionService.logTransaction(
+                    user.getId(), 
+                    BalanceTransactionType.REFUND, 
+                    refundAmount, 
+                    "Hoàn tiền trả sách: " + bookCopy.getBookTitle().getTitle(),
+                    user.getBalance()
+                );
+            }
         } else {
             // Penalty exceeds deposit, charge extra from user's balance
             extraCharge = totalPenaltyFee - bookPrice;
             user.setBalance(user.getBalance() - extraCharge);
+            
+            // Log balance transaction
+            balanceTransactionService.logTransaction(
+                user.getId(), 
+                BalanceTransactionType.PENALTY_FEE, 
+                -extraCharge, 
+                "Phí phạt thêm cho: " + bookCopy.getBookTitle().getTitle(),
+                user.getBalance()
+            );
         }
         userRepository.save(user);
 
