@@ -93,7 +93,7 @@ public class BookTitleService {
 
         // Set reviews
         List<ResponseReviewDto> reviews = bookTitle.getReviews().stream()
-                .map(reviewMapper::toResponseDto)
+                .map(this::buildEnhancedResponseReviewDto)
                 .toList();
         responseBookTitleDto.setReviews(reviews);
 
@@ -122,7 +122,7 @@ public class BookTitleService {
 
         // Set reviews
         List<ResponseReviewDto> reviews = bookTitle.getReviews().stream()
-                .map(reviewMapper::toResponseDto)
+                .map(this::buildEnhancedResponseReviewDto)
                 .toList();
         responseBookTitleDto.setReviews(reviews);
 
@@ -347,5 +347,19 @@ public class BookTitleService {
         }
 
         return true;
+    }
+    
+    private ResponseReviewDto buildEnhancedResponseReviewDto(Review review) {
+        ResponseReviewDto dto = reviewMapper.toResponseDto(review);
+        
+        // Add obfuscated user name (last word only)
+        if (review.getUser() != null && review.getUser().getName() != null) {
+            String fullName = review.getUser().getName();
+            String[] nameParts = fullName.trim().split("\\s+");
+            String obfuscatedName = nameParts[nameParts.length - 1]; // Get last word
+            dto.setUserName(obfuscatedName);
+        }
+        
+        return dto;
     }
 }

@@ -5,6 +5,7 @@ import com.todo.backend.dao.ReviewRepository;
 import com.todo.backend.dao.UserRepository;
 import com.todo.backend.dto.review.ResponseReviewDto;
 import com.todo.backend.dto.review.ReviewDto;
+import com.todo.backend.dto.review.UpdateReviewDto;
 import com.todo.backend.entity.Review;
 import com.todo.backend.mapper.ReviewMapper;
 import jakarta.transaction.Transactional;
@@ -30,7 +31,7 @@ public class ReviewService {
     public List<ResponseReviewDto> getAllReviews() {
         List<Review> reviews = reviewRepository.findAll();
         return reviews.stream()
-                .map(reviewMapper::toResponseDto)
+                .map(this::buildEnhancedResponseReviewDto)
                 .toList();
     }
 
@@ -38,7 +39,15 @@ public class ReviewService {
         Review review = reviewRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Review with ID does not exist"));
 
-        return reviewMapper.toResponseDto(review);
+        return buildEnhancedResponseReviewDto(review);
+    }
+    
+    public ResponseReviewDto getUserReviewForBook(String userId, String bookTitleId) {
+        Review review = reviewRepository.findByUserIdAndBookTitleId(userId, bookTitleId);
+        if (review == null) {
+            return null; // User has not reviewed this book
+        }
+        return buildEnhancedResponseReviewDto(review);
     }
 
     public ResponseReviewDto createReview(String userId, ReviewDto reviewDto) {
@@ -46,13 +55,18 @@ public class ReviewService {
         review.setUserId(userId);
 
         validateReview(review);
+        
+        // Check if user already has a review for this book
+        if (reviewRepository.existsByUserIdAndBookTitleId(userId, reviewDto.getBookTitleId())) {
+            throw new IllegalArgumentException("You have already reviewed this book. You can only leave one review per book.");
+        }
 
         reviewRepository.save(review);
 
-        return reviewMapper.toResponseDto(review);
+        return buildEnhancedResponseReviewDto(review);
     }
 
-    public ResponseReviewDto updateReview(String id, String userId, ReviewDto reviewDto) {
+    public ResponseReviewDto updateReview(String id, String userId, UpdateReviewDto updateReviewDto) {
         Review existingReview = reviewRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Review with ID does not exist"));
 
@@ -60,14 +74,11 @@ public class ReviewService {
             throw new IllegalArgumentException("You do not have permission to update this review");
         }
 
-        Review updatedReview = reviewMapper.toEntity(reviewDto);
-        validateReview(updatedReview);
-
-        reviewMapper.updateEntityFromDto(reviewDto, existingReview);
+        reviewMapper.updateEntityFromUpdateDto(updateReviewDto, existingReview);
 
         reviewRepository.save(existingReview);
 
-        return reviewMapper.toResponseDto(existingReview);
+        return buildEnhancedResponseReviewDto(existingReview);
     }
 
     public void deleteReview(String id, String userId) {
@@ -89,5 +100,19 @@ public class ReviewService {
         if (!bookTitleRepository.existsById(review.getBookTitleId())) {
             throw new IllegalArgumentException("Book title with this ID does not exist");
         }
+    }
+    
+    private ResponseReviewDto buildEnhancedResponseReviewDto(Review review) {
+        ResponseReviewDto dto = reviewMapper.toResponseDto(review);
+        
+        // Add obfuscated user name (last word only)
+        if (review.getUser() != null && review.getUser().getName() != null) {
+            String fullName = review.getUser().getName();
+            String[] nameParts = fullName.trim().split("\\s+");
+            String obfuscatedName = nameParts[nameParts.length - 1]; // Get last word
+            dto.setUserName(obfuscatedName);
+        }
+        
+        return dto;
     }
 }
