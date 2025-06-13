@@ -7,7 +7,9 @@ import com.todo.backend.dao.TransactionRepository;
 import com.todo.backend.dao.UserRepository;
 import com.todo.backend.dto.bookcopy.CreateBookCopyDto;
 import com.todo.backend.dto.bookcopy.ResponseBookCopyDto;
+import com.todo.backend.dto.bookcopy.UpdateBookCopyDto;
 import com.todo.backend.entity.*;
+import com.todo.backend.entity.identity.UserRole;
 import com.todo.backend.mapper.BookCopyMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -107,16 +109,56 @@ public class BookCopyService {
         bookCopyRepository.delete(existingBookCopy);
     }
 
-    public ResponseBookCopyDto updateBookCopy(String id, CreateBookCopyDto bookCopyDto) {
+    public ResponseBookCopyDto updateBookCopy(String id, UpdateBookCopyDto updateBookCopyDto, String currentUserId) {
         BookCopy existingBookCopy = bookCopyRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("BookCopy with this ID does not exist"));
 
-        // Update the fields of the existing book copy
-        // TODO
-//        bookCopyMapper.updateEntityFromDto(bookCopyDto, existingBookCopy);
+        // Get current user's role for validation
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Current user not found"));
+        
+        // Validate business rules based on role
+        validateBookCopyUpdate(existingBookCopy, updateBookCopyDto, currentUser.getRole());
+
+        // Update the fields using the mapper
+        bookCopyMapper.updateEntityFromUpdateDto(updateBookCopyDto, existingBookCopy);
+        
         bookCopyRepository.save(existingBookCopy);
 
-        throw new UnsupportedOperationException("Update operation is not implemented yet");
-//        return buildEnhancedBookCopyDto(existingBookCopy);
+        return buildEnhancedBookCopyDto(existingBookCopy);
+    }
+
+    private void validateBookCopyUpdate(BookCopy existingBookCopy, UpdateBookCopyDto updateDto, UserRole currentUserRole) {
+        // Role-based validation: Librarians can only change status when book is NOT borrowed
+        if (currentUserRole == UserRole.LIBRARIAN) {
+            // Check if the status is being changed
+            if (!existingBookCopy.getStatus().equals(updateDto.getStatus())) {
+                // Librarian cannot change status if book is currently borrowed
+                if (existingBookCopy.getStatus() == BookCopyStatus.BORROWED) {
+                    throw new IllegalArgumentException("Librarians cannot change book status while the book is borrowed");
+                }
+            }
+        }
+        // Note: ADMIN can do whatever they want - no additional restrictions
+
+        // Existing business rules (apply to all roles)
+        // Cannot change status to BORROWED if there are no active transactions
+        if (updateDto.getStatus() == BookCopyStatus.BORROWED) {
+            List<Transaction> unreturned = transactionRepository
+                    .findByBookCopyIdAndReturnedDateIsNull(existingBookCopy.getId());
+            if (unreturned.isEmpty()) {
+                throw new IllegalArgumentException("Cannot set status to BORROWED without an active transaction");
+            }
+        }
+
+        // Cannot change status from BORROWED to other status if there are active transactions
+        if (existingBookCopy.getStatus() == BookCopyStatus.BORROWED && 
+            updateDto.getStatus() != BookCopyStatus.BORROWED) {
+            List<Transaction> unreturned = transactionRepository
+                    .findByBookCopyIdAndReturnedDateIsNull(existingBookCopy.getId());
+            if (!unreturned.isEmpty()) {
+                throw new IllegalArgumentException("Cannot change status from BORROWED while there are active transactions. Return the book first.");
+            }
+        }
     }
 }

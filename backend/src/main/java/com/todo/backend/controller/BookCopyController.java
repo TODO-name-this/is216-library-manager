@@ -3,11 +3,13 @@ package com.todo.backend.controller;
 import com.todo.backend.dao.BookCopyRepository;
 import com.todo.backend.dto.bookcopy.CreateBookCopyDto;
 import com.todo.backend.dto.bookcopy.ResponseBookCopyDto;
+import com.todo.backend.dto.bookcopy.UpdateBookCopyDto;
 import com.todo.backend.service.BookCopyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -100,13 +102,14 @@ public class BookCopyController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateBookCopy(@PathVariable String id, @Valid @RequestBody CreateBookCopyDto bookCopyDto, BindingResult result) {
+    public ResponseEntity<?> updateBookCopy(@PathVariable String id, @Valid @RequestBody UpdateBookCopyDto updateBookCopyDto, BindingResult result, Authentication authentication) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(Objects.requireNonNull(result.getFieldError()).getDefaultMessage());
             }
 
-            var updatedBookCopy = bookCopyService.updateBookCopy(id, bookCopyDto);
+            String currentUserId = authentication.getName();
+            ResponseBookCopyDto updatedBookCopy = bookCopyService.updateBookCopy(id, updateBookCopyDto, currentUserId);
             return ResponseEntity.ok(updatedBookCopy);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error updating book copy: " + e.getMessage());

@@ -50,10 +50,10 @@ public class ReservationService {
             throw new RuntimeException("You do not have permission to view this reservation");
         }
 
-        return enhanceReservationDto(reservation, userId);
+        return enhanceReservationDto(reservation);
     }
 
-    private ResponseReservationDto enhanceReservationDto(Reservation reservation, String requestingUserId) {
+    private ResponseReservationDto enhanceReservationDto(Reservation reservation) {
         ResponseReservationDto dto = reservationMapper.toResponseDto(reservation);
         
         // Get book details
@@ -64,7 +64,9 @@ public class ReservationService {
         // Get author names
         List<String> authorNames = bookTitle.getBookAuthors().stream()
                 .map(bookAuthor -> bookAuthor.getAuthor().getName())
-                .toList();        dto.setBookAuthors(authorNames);
+                .toList();
+
+        dto.setBookAuthors(authorNames);
         
         return dto;
     }
@@ -72,14 +74,14 @@ public class ReservationService {
     public List<ResponseReservationDto> getAllReservations() {
         List<Reservation> reservations = reservationRepository.findAll();
         return reservations.stream()
-                .map(reservation -> enhanceReservationDto(reservation, null))
+                .map(this::enhanceReservationDto)
                 .toList();
     }
 
     public List<ResponseReservationDto> getReservationsByUserId(String userId) {
         List<Reservation> reservations = reservationRepository.findByUserId(userId);
         return reservations.stream()
-                .map(reservation -> enhanceReservationDto(reservation, userId))
+                .map(this::enhanceReservationDto)
                 .toList();
     }
 
@@ -240,16 +242,6 @@ public class ReservationService {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
 
-        // Verify permissions
-        boolean isOwner = reservation.getUserId().equals(userId);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        boolean isAdminOrLibrarian = user.getRole().equals(UserRole.ADMIN) || user.getRole().equals(UserRole.LIBRARIAN);
-        
-        if (!isOwner && !isAdminOrLibrarian) {
-            throw new RuntimeException("You do not have permission to assign book copy to this reservation");
-        }
-
         // Check if reservation is still active
         LocalDate today = LocalDate.now();
         if (reservation.getExpirationDate().isBefore(today)) {
@@ -258,7 +250,7 @@ public class ReservationService {
 
         // Find an available book copy for this book title
         BookCopy availableBookCopy = bookCopyRepository.findFirstByBookTitleIdAndStatus(
-                reservation.getBookTitleId(), "AVAILABLE");
+                reservation.getBookTitleId(), BookCopyStatus.AVAILABLE);
         
         if (availableBookCopy == null) {
             throw new RuntimeException("No available physical copy for pickup at this time");
@@ -270,7 +262,7 @@ public class ReservationService {
         reservationRepository.save(reservation);
         bookCopyRepository.save(availableBookCopy);
 
-        return enhanceReservationDto(reservation, userId);
+        return enhanceReservationDto(reservation);
     }
 
     private void validateReservationRules(Reservation reservation) {

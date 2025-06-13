@@ -12,6 +12,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 
 @CrossOrigin("http://localhost:3000")
 @RestController
@@ -51,7 +52,7 @@ public class ReservationController {
     public ResponseEntity<?> createReservation(@Valid @RequestBody CreateReservationDto createReservationDto, BindingResult result, Authentication authentication) {
         try {
             if (result.hasErrors()) {
-                return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
+                return ResponseEntity.badRequest().body(Objects.requireNonNull(result.getFieldError()).getDefaultMessage());
             }
 
             String userId = authentication.getName();
@@ -67,7 +68,7 @@ public class ReservationController {
     public ResponseEntity<?> updateReservation(@PathVariable String id, @Valid @RequestBody UpdateReservationDto updateReservationDto, BindingResult result, Authentication authentication) {
         try {
             if (result.hasErrors()) {
-                return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
+                return ResponseEntity.badRequest().body(Objects.requireNonNull(result.getFieldError()).getDefaultMessage());
             }
 
             String userId = authentication.getName();
@@ -100,7 +101,7 @@ public class ReservationController {
         }
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN', 'USER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @PostMapping("/{id}/assign-copy")
     public ResponseEntity<?> assignBookCopyToReservation(@PathVariable String id, Authentication authentication) {
         try {
