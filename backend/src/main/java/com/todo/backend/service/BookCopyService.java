@@ -128,7 +128,20 @@ public class BookCopyService {
         return buildEnhancedBookCopyDto(existingBookCopy);
     }
 
-    private void validateBookCopyUpdate(BookCopy existingBookCopy, UpdateBookCopyDto updateDto) {
+    private void validateBookCopyUpdate(BookCopy existingBookCopy, UpdateBookCopyDto updateDto, UserRole currentUserRole) {
+        // Role-based validation: Librarians can only change status when book is NOT borrowed
+        if (currentUserRole == UserRole.LIBRARIAN) {
+            // Check if the status is being changed
+            if (!existingBookCopy.getStatus().equals(updateDto.getStatus())) {
+                // Librarian cannot change status if book is currently borrowed
+                if (existingBookCopy.getStatus() == BookCopyStatus.BORROWED) {
+                    throw new IllegalArgumentException("Librarians cannot change book status while the book is borrowed");
+                }
+            }
+        }
+        // Note: ADMIN can do whatever they want - no additional restrictions
+
+        // Existing business rules (apply to all roles)
         // Cannot change status to BORROWED if there are no active transactions
         if (updateDto.getStatus() == BookCopyStatus.BORROWED) {
             List<Transaction> unreturned = transactionRepository
