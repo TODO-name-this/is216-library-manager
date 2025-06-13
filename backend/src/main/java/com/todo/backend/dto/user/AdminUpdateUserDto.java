@@ -30,6 +30,9 @@ public class AdminUpdateUserDto {
     @Email(message = "Invalid email format")
     private String email;
 
+    @Size(min = 8, message = "Password must be at least 8 characters")
+    private String password;
+
     private UserRole role;
 
     @Min(value = 0, message = "Balance must be positive or zero")

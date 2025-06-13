@@ -28,12 +28,10 @@ public interface UserMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "role", ignore = true)
-    @Mapping(target = "password", ignore = true)
     void updateEntityFromLibrarianUpdateDto(LibrarianUpdateUserDto librarianUpdateUserDto, @MappingTarget User user);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "password", ignore = true)
     void updateEntityFromAdminUpdateDto(AdminUpdateUserDto adminUpdateUserDto, @MappingTarget User user);
 
     ResponseUserDto toResponseDto(User user);
