@@ -25,11 +25,11 @@ public class BookTitleService {
     private final BookTitleMapper bookTitleMapper;
     private final ReviewMapper reviewMapper;
 
-    public BookTitleService(BookTitleRepository bookTitleRepository, 
-                          BookCopyRepository bookCopyRepository,
-                          ReservationRepository reservationRepository,
-                          BookTitleMapper bookTitleMapper, 
-                          ReviewMapper reviewMapper) {
+    public BookTitleService(BookTitleRepository bookTitleRepository,
+                            BookCopyRepository bookCopyRepository,
+                            ReservationRepository reservationRepository,
+                            BookTitleMapper bookTitleMapper,
+                            ReviewMapper reviewMapper) {
         this.bookTitleRepository = bookTitleRepository;
         this.bookCopyRepository = bookCopyRepository;
         this.reservationRepository = reservationRepository;
@@ -76,13 +76,13 @@ public class BookTitleService {
                 .orElseThrow(() -> new IllegalArgumentException("Book title ID does not exist"));
 
         ResponseBookTitleDto responseBookTitleDto = bookTitleMapper.toResponseDto(bookTitle);
-        
+
         // Set author and category IDs
         List<String> authorIds = new ArrayList<>(bookTitle.getBookAuthors().stream().map(BookAuthor::getAuthorId).toList());
         List<String> categoryIds = new ArrayList<>(bookTitle.getBookCategories().stream().map(BookCategory::getCategoryId).toList());
         responseBookTitleDto.setAuthorIds(authorIds);
         responseBookTitleDto.setCategoryIds(categoryIds);
-        
+
         // Set author and category names
         List<String> authorNames = new ArrayList<>(bookTitle.getBookAuthors().stream()
                 .map(bookAuthor -> bookAuthor.getAuthor().getName()).toList());
@@ -90,7 +90,7 @@ public class BookTitleService {
                 .map(bookCategory -> bookCategory.getCategory().getName()).toList());
         responseBookTitleDto.setAuthorNames(authorNames);
         responseBookTitleDto.setCategoryNames(categoryNames);
-        
+
         // Set reviews
         List<ResponseReviewDto> reviews = bookTitle.getReviews().stream()
                 .map(reviewMapper::toResponseDto)
@@ -105,13 +105,13 @@ public class BookTitleService {
                 .orElseThrow(() -> new IllegalArgumentException("Book title ID does not exist"));
 
         ResponseBookTitleDto responseBookTitleDto = bookTitleMapper.toResponseDto(bookTitle);
-        
+
         // Set author and category IDs
         List<String> authorIds = new ArrayList<>(bookTitle.getBookAuthors().stream().map(BookAuthor::getAuthorId).toList());
         List<String> categoryIds = new ArrayList<>(bookTitle.getBookCategories().stream().map(BookCategory::getCategoryId).toList());
         responseBookTitleDto.setAuthorIds(authorIds);
         responseBookTitleDto.setCategoryIds(categoryIds);
-        
+
         // Set author and category names
         List<String> authorNames = new ArrayList<>(bookTitle.getBookAuthors().stream()
                 .map(bookAuthor -> bookAuthor.getAuthor().getName()).toList());
@@ -119,7 +119,7 @@ public class BookTitleService {
                 .map(bookCategory -> bookCategory.getCategory().getName()).toList());
         responseBookTitleDto.setAuthorNames(authorNames);
         responseBookTitleDto.setCategoryNames(categoryNames);
-        
+
         // Set reviews
         List<ResponseReviewDto> reviews = bookTitle.getReviews().stream()
                 .map(reviewMapper::toResponseDto)
@@ -134,22 +134,28 @@ public class BookTitleService {
         LocalDate today = LocalDate.now();
         List<Reservation> activeReservations = reservationRepository.findActiveReservationsByBookTitleId(id, today);
         int onlineReservations = activeReservations.size();
-        
+
         // Available copies for online reservation = max online reservations - current online reservations
         int availableForOnlineReservation = Math.max(0, maxOnlineReservations - onlineReservations);
-        
+
         // Physical copies available = total copies - pending reservations
         int physicalCopiesAvailable = Math.max(0, totalCopies - onlineReservations);
-        
+
         // Set availability information (visible to everyone)
         responseBookTitleDto.setTotalCopies(totalCopies);
         responseBookTitleDto.setAvailableCopies(availableForOnlineReservation); // For UI display of reservation availability
         responseBookTitleDto.setOnlineReservations(onlineReservations);
         responseBookTitleDto.setMaxOnlineReservations(maxOnlineReservations);        // Set user-specific information (only for authenticated users with USER role)
         if (currentUserId != null && isUserRole) {
+            List<Reservation> userResForBook = reservationRepository
+                    .findActiveReservationsByUserIdAndBookTitleId(currentUserId, id, today);
+            responseBookTitleDto.setUserReservationsForThisBook(userResForBook.size());
+
             // Get user's total active reservations across all books (this shows global user reservation count)
-            List<Reservation> userTotalReservations = reservationRepository.findActiveReservationsByUserId(currentUserId, today);
-            responseBookTitleDto.setUserReservationsForThisBook(userTotalReservations.size()); // Note: despite field name, this is total user reservations
+            List<Reservation> userAllRes = reservationRepository
+                    .findActiveReservationsByUserId(currentUserId, today);
+            responseBookTitleDto.setTotalUserActiveReservations(userAllRes.size());
+
             responseBookTitleDto.setMaxUserReservations(5); // Business rule: max 5 reservations per user
         }
 
@@ -214,10 +220,10 @@ public class BookTitleService {
 
         BookTitle existingBookTitle = bookTitleRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Book title ID does not exist"));
-        
+
         // Store old totalCopies for inventory reconciliation
         int oldTotalCopies = existingBookTitle.getTotalCopies();
-        
+
         existingBookTitle.getBookAuthors().clear();
         existingBookTitle.getBookCategories().clear();
 
@@ -271,20 +277,20 @@ public class BookTitleService {
     private void generateBookCopiesForTitle(String bookTitleId, int totalCopies) {
         BookTitle bookTitle = bookTitleRepository.findById(bookTitleId)
                 .orElseThrow(() -> new IllegalArgumentException("BookTitle not found"));
-        
+
         // Get the book title for creating readable copy IDs
         String titlePrefix = bookTitle.getTitle().replaceAll("[^a-zA-Z0-9]", "").substring(0, Math.min(bookTitle.getTitle().length(), 10)).toUpperCase();
-        
+
         for (int i = 1; i <= totalCopies; i++) {
             BookCopy bookCopy = new BookCopy();
             bookCopy.setBookTitleId(bookTitleId);
             bookCopy.setStatus(BookCopyStatus.AVAILABLE);
             bookCopy.setCondition(BookCopyCondition.NEW);
-            
+
             // Generate human-readable ID like "HARRYPOTTER001", "HARRYPOTTER002", etc.
             String copyNumber = String.format("%03d", i);
             // Let the database auto-generate the actual ID, but we could add a displayId field if needed
-            
+
             bookCopyRepository.save(bookCopy);
         }
     }
@@ -295,11 +301,11 @@ public class BookTitleService {
     public void reconcileInventory(String bookTitleId) {
         BookTitle bookTitle = bookTitleRepository.findById(bookTitleId)
                 .orElseThrow(() -> new IllegalArgumentException("BookTitle not found"));
-                
+
         List<BookCopy> actualCopies = bookCopyRepository.findByBookTitleId(bookTitleId);
         int actualCopyCount = actualCopies.size();
         int expectedCopyCount = bookTitle.getTotalCopies();
-        
+
         if (actualCopyCount < expectedCopyCount) {
             // Generate missing copies
             int missingCopies = expectedCopyCount - actualCopyCount;
@@ -322,16 +328,16 @@ public class BookTitleService {
     public boolean canUserReserveBook(String bookTitleId, String userId) {
         BookTitle bookTitle = bookTitleRepository.findById(bookTitleId)
                 .orElseThrow(() -> new IllegalArgumentException("BookTitle not found"));
-                
+
         // Check if there are available slots for online reservations
         LocalDate today = LocalDate.now();
         List<Reservation> activeReservations = reservationRepository.findActiveReservationsByBookTitleId(bookTitleId, today);
         int currentOnlineReservations = activeReservations.size();
-        
+
         if (currentOnlineReservations >= bookTitle.getMaxOnlineReservations()) {
             return false; // No more online reservation slots available
         }
-        
+
         // Check if user already has an active reservation for this book
         List<Reservation> userReservations = reservationRepository.findByUserIdAndBookTitleId(userId, bookTitleId);
         for (Reservation reservation : userReservations) {
@@ -339,7 +345,7 @@ public class BookTitleService {
                 return false; // User already has an active reservation for this book
             }
         }
-        
+
         return true;
     }
 }
