@@ -11,6 +11,5 @@ public class ReturnBookResponseDto {
     private ResponseTransactionDetailDto transactionDetail;
     private int totalPenaltyFee;
     private int refundAmount;
-    private int newUserBalance;
     private String message;
 }

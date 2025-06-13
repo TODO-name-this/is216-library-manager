@@ -19,6 +19,7 @@ public class ResponseTransactionDto {
     // Additional fields for enhanced response
     private String userName;
     private String bookTitle;
+    private Integer bookPrice; // Book price for frontend late fee calculation
 
     private ResponseTransactionDetailDto transactionDetail;
 }

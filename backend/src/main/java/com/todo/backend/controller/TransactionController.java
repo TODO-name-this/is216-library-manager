@@ -117,13 +117,15 @@ public class TransactionController {
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @PutMapping("/{id}/return")
-    public ResponseEntity<?> returnBook(@PathVariable String id, @Valid @RequestBody ReturnBookDto returnBookDto, BindingResult result) {
+    public ResponseEntity<?> returnBook(@PathVariable String id, @Valid @RequestBody ReturnBookDto returnBookDto, 
+                                       @RequestParam(value = "isLost", defaultValue = "false") boolean isLost, 
+                                       BindingResult result) {
         try {
             if (result.hasErrors()) {
                 return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
             }
 
-            ReturnBookResponseDto response = transactionService.returnBook(id, returnBookDto);
+            ReturnBookResponseDto response = transactionService.returnBook(id, returnBookDto, isLost);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error returning book: " + e.getMessage());
