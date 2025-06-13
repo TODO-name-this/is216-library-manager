@@ -18,6 +18,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -295,8 +296,9 @@ public class TransactionService {
 
     /**
      * Integrated book return with penalty calculation
+     * @param isLost If true, treats the book as lost (penalty = bookPrice + late fees)
      */
-    public ReturnBookResponseDto returnBook(String transactionId, ReturnBookDto returnBookDto) {
+    public ReturnBookResponseDto returnBook(String transactionId, ReturnBookDto returnBookDto, boolean isLost) {
         // Get the transaction
         Transaction transaction = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new RuntimeException("Transaction with ID not found"));
@@ -312,31 +314,50 @@ public class TransactionService {
         User user = userRepository.findById(transaction.getUserId())
                 .orElseThrow(() -> new RuntimeException("User with ID " + transaction.getUserId() + " not found"));
 
-        // Calculate penalties
-        int lateFee = calculateLateFee(transaction, returnBookDto.getReturnedDate());
-        int damageFee = calculateDamageFee(bookCopy.getCondition(), returnBookDto.getBookCondition(), bookCopy.getBookTitle().getPrice());
-        int totalPenaltyFee = lateFee + damageFee + returnBookDto.getAdditionalPenaltyFee();
+        // Calculate penalties with automatic late fee calculation
+        int bookPrice = bookCopy.getBookTitle().getPrice();
+        int automaticLateFee;
+        int additionalPenalty = returnBookDto.getAdditionalPenaltyFee(); // damage fees, etc.
+          if (isLost) {
+            // Lost book: book replacement cost + capped late fees
+            automaticLateFee = calculateLateFee(transaction, returnBookDto.getReturnedDate(), bookPrice); // Still capped
+            additionalPenalty += bookPrice; // Add book replacement cost to additional penalty
+        } else {
+            // Normal return: late fee capped at book price
+            automaticLateFee = calculateLateFee(transaction, returnBookDto.getReturnedDate(), bookPrice);
+        }
+
+        int totalPenaltyFee = automaticLateFee + additionalPenalty;
+          // Note: Late fee is always capped at book price for both normal and lost returns
+        // For lost books, user pays capped late fee + book replacement cost + any damage fees
 
         // Update transaction
         transaction.setReturnedDate(returnBookDto.getReturnedDate());
         Transaction updatedTransaction = transactionRepository.save(transaction);
 
         // Update book copy status and condition
-        updateBookCopyForReturn(bookCopy, returnBookDto.getBookCondition());
+        updateBookCopyForReturn(bookCopy, returnBookDto.getBookCondition(), isLost);
 
         // Create transaction detail if there are penalties or description
         TransactionDetail transactionDetail = null;
         if (totalPenaltyFee > 0 || returnBookDto.getDescription() != null) {
-            transactionDetail = createTransactionDetail(transactionId, totalPenaltyFee,
-                    buildPenaltyDescription(lateFee, damageFee, returnBookDto.getAdditionalPenaltyFee(), returnBookDto.getDescription()));
+            String description = buildPenaltyDescription(automaticLateFee, additionalPenalty, returnBookDto.getDescription(), isLost, bookPrice);
+            transactionDetail = createTransactionDetail(transactionId, totalPenaltyFee, description);
         }
 
-        // Calculate refund (book price minus penalties)
-        int bookPrice = bookCopy.getBookTitle().getPrice();
-        int refundAmount = Math.max(0, bookPrice - totalPenaltyFee);
-
-        // Update user balance
-        user.setBalance(user.getBalance() + refundAmount);
+        // Update user balance: user gets refund of (book price - penalty) or pays extra if penalty > book price
+        int refundAmount = 0;
+        int extraCharge = 0;
+        
+        if (totalPenaltyFee <= bookPrice) {
+            // Penalty is covered by deposit, give partial refund
+            refundAmount = bookPrice - totalPenaltyFee;
+            user.setBalance(user.getBalance() + refundAmount);
+        } else {
+            // Penalty exceeds deposit, charge extra from user's balance
+            extraCharge = totalPenaltyFee - bookPrice;
+            user.setBalance(user.getBalance() - extraCharge);
+        }
         userRepository.save(user);
 
         // Build response
@@ -349,44 +370,31 @@ public class TransactionService {
             responseTransactionDto.setTransactionDetail(responseTransactionDetailDto);
         }
 
-        String message = buildReturnMessage(lateFee, damageFee, returnBookDto.getAdditionalPenaltyFee(), refundAmount);
+        String message = buildReturnMessage(automaticLateFee, additionalPenalty, refundAmount, bookPrice);
 
         return ReturnBookResponseDto.builder()
                 .transaction(responseTransactionDto)
                 .transactionDetail(responseTransactionDetailDto)
                 .totalPenaltyFee(totalPenaltyFee)
                 .refundAmount(refundAmount)
-                .newUserBalance(user.getBalance())
                 .message(message)
                 .build();
     }
 
-    private int calculateLateFee(Transaction transaction, LocalDate returnDate) {
-        if (returnDate.isAfter(transaction.getDueDate())) {
-            long daysLate = returnDate.toEpochDay() - transaction.getDueDate().toEpochDay();
-            return (int) (daysLate * 5000); // 5,000 VND per day late
-        }
-        return 0;
-    }
-
-    private int calculateDamageFee(BookCopyCondition originalCondition, BookCopyCondition returnCondition, int bookPrice) {
-        if (returnCondition == BookCopyCondition.DAMAGED && originalCondition != BookCopyCondition.DAMAGED) {
-            return bookPrice / 2; // 50% of book price for damage
-        }
-        if (returnCondition == BookCopyCondition.WORN && originalCondition == BookCopyCondition.NEW) {
-            return bookPrice / 10; // 10% of book price for wear
-        }
-        return 0;
-    }
-
-    private void updateBookCopyForReturn(BookCopy bookCopy, BookCopyCondition newCondition) {
-        bookCopy.setCondition(newCondition);
-
-        // Set status based on condition
-        if (newCondition == BookCopyCondition.DAMAGED) {
-            bookCopy.setStatus(BookCopyStatus.DAMAGED);
+    private void updateBookCopyForReturn(BookCopy bookCopy, BookCopyCondition newCondition, boolean isLost) {
+        if (isLost) {
+            // Lost book: mark as lost regardless of condition
+            bookCopy.setStatus(BookCopyStatus.LOST);
+            bookCopy.setCondition(BookCopyCondition.DAMAGED); // Assume lost books are damaged
         } else {
-            bookCopy.setStatus(BookCopyStatus.AVAILABLE);
+            bookCopy.setCondition(newCondition);
+
+            // Set status based on condition
+            if (newCondition == BookCopyCondition.DAMAGED) {
+                bookCopy.setStatus(BookCopyStatus.DAMAGED);
+            } else {
+                bookCopy.setStatus(BookCopyStatus.AVAILABLE);
+            }
         }
 
         bookCopyRepository.save(bookCopy);
@@ -401,42 +409,11 @@ public class TransactionService {
         return transactionDetailRepository.save(transactionDetail);
     }
 
-    private String buildPenaltyDescription(int lateFee, int damageFee, int additionalFee, String customDescription) {
-        StringBuilder description = new StringBuilder();
-
-        if (lateFee > 0) {
-            description.append(String.format("Late fee: %,d VND. ", lateFee));
-        }
-        if (damageFee > 0) {
-            description.append(String.format("Damage fee: %,d VND. ", damageFee));
-        }
-        if (additionalFee > 0) {
-            description.append(String.format("Additional fee: %,d VND. ", additionalFee));
-        }
-        if (customDescription != null && !customDescription.trim().isEmpty()) {
-            description.append(customDescription);
-        }
-
-        return description.toString().trim();
-    }
-
-    private String buildReturnMessage(int lateFee, int damageFee, int additionalFee, int refundAmount) {
-        StringBuilder message = new StringBuilder("Book returned successfully. ");
-
-        if (lateFee > 0 || damageFee > 0 || additionalFee > 0) {
-            message.append(String.format("Total penalties: %,d VND. ", lateFee + damageFee + additionalFee));
-        }
-
-        message.append(String.format("Refund amount: %,d VND.", refundAmount));
-
-        return message.toString();
-    }
-
     /**
-     * Helper method to enhance transaction DTO with user name and book title
+     * Helper method to enhance transaction DTO with username, book title, and book price
      */
     private void enhanceTransactionDto(ResponseTransactionDto responseTransactionDto, Transaction transaction) {
-        // Get user name
+        // Get username
         if (transaction.getUser() != null) {
             responseTransactionDto.setUserName(transaction.getUser().getName());
         } else {
@@ -445,17 +422,105 @@ public class TransactionService {
                     .ifPresent(user -> responseTransactionDto.setUserName(user.getName()));
         }
 
-        // Get book title
+        // Get book title and price
         if (transaction.getBookCopy() != null && transaction.getBookCopy().getBookTitle() != null) {
             responseTransactionDto.setBookTitle(transaction.getBookCopy().getBookTitle().getTitle());
+            responseTransactionDto.setBookPrice(transaction.getBookCopy().getBookTitle().getPrice());
         } else {
             // Fallback if relationships are not loaded
             bookCopyRepository.findById(transaction.getBookCopyId())
                     .ifPresent(bookCopy -> {
                         if (bookCopy.getBookTitle() != null) {
                             responseTransactionDto.setBookTitle(bookCopy.getBookTitle().getTitle());
+                            responseTransactionDto.setBookPrice(bookCopy.getBookTitle().getPrice());
                         }
                     });
         }
+    }
+    
+    /**
+     * Calculate automatic late fee with cap at book price
+     * @param transaction The borrowing transaction
+     * @param returnDate The actual return date
+     * @param bookPrice The book's price (used as maximum penalty)
+     * @return Late fee amount (capped at book price)
+     */
+    private int calculateLateFee(Transaction transaction, LocalDate returnDate, int bookPrice) {
+        LocalDate dueDate = transaction.getDueDate();
+        
+        if (returnDate.isAfter(dueDate)) {
+            long daysLate = ChronoUnit.DAYS.between(dueDate, returnDate);
+            int lateFee = (int) (daysLate * 5000); // 5,000 VND per day late
+            
+            // Cap at book replacement cost
+            return Math.min(lateFee, bookPrice);
+        }
+        
+        return 0; // No late fee if returned on time or early
+    }
+    
+    /**
+     * Calculate late fee without capping (for lost books)
+     * @param transaction The transaction
+     * @param returnDate The date the book was marked as lost/returned
+     * @return Late fee amount (uncapped)
+     */    /**
+     * Build detailed description of penalty breakdown
+     */
+    private String buildPenaltyDescription(int lateFee, int additionalFee, String customDescription, boolean isLost, int bookPrice) {
+        StringBuilder description = new StringBuilder();
+        
+        if (isLost) {
+            description.append("LOST BOOK: ");
+            if (lateFee > 0) {
+                long days = lateFee / 5000;
+                description.append(String.format("Late fee: %,d VND (%d days × 5,000 VND/day, uncapped). ", lateFee, days));
+            }
+            description.append(String.format("Book replacement cost: %,d VND. ", bookPrice));
+            if (additionalFee > bookPrice) {
+                int damageOnly = additionalFee - bookPrice;
+                if (damageOnly > 0) {
+                    description.append(String.format("Additional damage fee: %,d VND. ", damageOnly));
+                }
+            }
+        } else {
+            if (lateFee > 0) {
+                long days = lateFee / 5000; // Calculate days from fee
+                description.append(String.format("Late fee: %,d VND (%d days × 5,000 VND/day). ", lateFee, days));
+            }
+            if (additionalFee > 0) {
+                description.append(String.format("Additional penalty: %,d VND. ", additionalFee));
+            }
+        }
+        
+        if (customDescription != null && !customDescription.trim().isEmpty()) {
+            description.append(customDescription.trim());
+        }
+        
+        return description.toString().trim();
+    }
+
+    /**
+     * Build return message with penalty breakdown
+     */
+    private String buildReturnMessage(int lateFee, int additionalFee, int refundAmount, int bookPrice) {
+        StringBuilder message = new StringBuilder("Book returned successfully. ");
+        
+        int totalPenalties = lateFee + additionalFee;
+        
+        if (lateFee > 0) {
+            long days = lateFee / 5000;
+            message.append(String.format("Late fee: %,d VND (%d days). ", lateFee, days));
+        }
+        if (additionalFee > 0) {
+            message.append(String.format("Additional penalty: %,d VND. ", additionalFee));
+        }
+        if (totalPenalties > 0) {
+            message.append(String.format("Total penalties: %,d VND. ", totalPenalties));
+        }
+        
+        message.append(String.format("Refund amount: %,d VND.", refundAmount));
+        
+        return message.toString();
     }
 }
