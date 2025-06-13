@@ -120,7 +120,14 @@ public class UserService {
 
         // Apply updates based on current user's role
         if (currentUserRole == UserRole.ADMIN) {
-            // Admin can edit everything except password, but with role restrictions
+            // Admin can edit everything except other admins, but with role restrictions
+            
+            // Handle password encoding first
+            String encodedPassword = null;
+            if (updateUserDto.getPassword() != null && !updateUserDto.getPassword().trim().isEmpty()) {
+                encodedPassword = passwordEncoder.encode(updateUserDto.getPassword());
+            }
+            
             AdminUpdateUserDto adminDto = AdminUpdateUserDto.builder()
                     .cccd(updateUserDto.getCccd())
                     .dob(updateUserDto.getDob())
@@ -128,13 +135,14 @@ public class UserService {
                     .name(updateUserDto.getName())
                     .phone(updateUserDto.getPhone())
                     .email(updateUserDto.getEmail())
-                    .role(updateUserDto.getRole()) // Include role field
+                    .password(encodedPassword) // Use encoded password
+                    .role(updateUserDto.getRole())
                     .balance(updateUserDto.getBalance())
                     .build();
             
-            // Admin cannot modify other admin users
-            if (existingUser.getRole() == UserRole.ADMIN) {
-                throw new IllegalArgumentException("Cannot modify admin users");
+            // Admin cannot modify other admin users (except themselves)
+            if (existingUser.getRole() == UserRole.ADMIN && !existingUser.getId().equals(currentUserId)) {
+                throw new IllegalArgumentException("Cannot modify other admin users");
             }
             
             // Role validation: cannot promote to admin
@@ -144,11 +152,18 @@ public class UserService {
             
             userMapper.updateEntityFromAdminUpdateDto(adminDto, existingUser);
         } else {
-            // Librarian can edit all fields except role and password
+            // Librarian can edit all fields except role, and can set passwords for non-admin users
             // If librarian tries to update role, throw error
             if (updateUserDto.getRole() != null) {
                 throw new IllegalArgumentException("Librarians cannot modify user roles");
             }
+            
+            // Handle password encoding before mapping
+            if (updateUserDto.getPassword() != null && !updateUserDto.getPassword().trim().isEmpty()) {
+                String encodedPassword = passwordEncoder.encode(updateUserDto.getPassword());
+                updateUserDto.setPassword(encodedPassword);
+            }
+            
             userMapper.updateEntityFromLibrarianUpdateDto(updateUserDto, existingUser);
         }
 
