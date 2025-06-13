@@ -47,17 +47,6 @@ public class ReservationController {
         }
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN', 'USER')")
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<?> getReservationsByUserId(@PathVariable String userId) {
-        try {
-            List<ResponseReservationDto> reservations = reservationService.getReservationsByUserId(userId);
-            return ResponseEntity.ok(reservations);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error fetching reservations for user: " + e.getMessage());
-        }
-    }
-
     @PreAuthorize("hasAnyAuthority('USER')")
     @PostMapping
     public ResponseEntity<?> createReservation(@Valid @RequestBody CreateReservationDto createReservationDto, BindingResult result, Authentication authentication) {
@@ -89,7 +78,7 @@ public class ReservationController {
             return ResponseEntity.status(500).body("Error updating reservation: " + e.getMessage());        }
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN', 'USER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteReservation(
             @PathVariable String id,

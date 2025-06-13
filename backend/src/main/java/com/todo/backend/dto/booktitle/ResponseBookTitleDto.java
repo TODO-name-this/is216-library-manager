@@ -36,6 +36,4 @@ public class ResponseBookTitleDto {
     // User-specific information (only for authenticated users with USER role)
     private Integer userReservationsForThisBook;
     private Integer maxUserReservations;
-
-    private Integer totalUserActiveReservations;
 }
