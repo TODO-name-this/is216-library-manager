@@ -14,4 +14,5 @@ public class ResponseReviewDto {
     private int star;
     private String bookTitleId;
     private String userId;
+    private String userName; // Obfuscated user name (last word only)
 }

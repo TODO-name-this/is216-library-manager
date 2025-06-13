@@ -14,4 +14,7 @@ public interface ReviewRepository extends JpaRepository<Review, String> {
     Review findByUserIdAndBookTitleId(String userId, String bookTitleId);
 
     Page<Review> findByUserId(@RequestParam("userId") String userId, Pageable pageable);
+    
+    // Check if review already exists for user and book combination
+    boolean existsByUserIdAndBookTitleId(String userId, String bookTitleId);
 }

@@ -538,7 +538,8 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
         "comment": "Cuốn sách tuyệt vời cho lập trình viên Java!",
         "star": 5,
         "bookTitleId": "BT001",
-        "userId": "U001"
+        "userId": "U001",
+        "userName": "Nguyen"
     },
     {
         "id": "R002",
@@ -546,7 +547,8 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
         "comment": "Rất hữu ích cho việc viết code sạch.",
         "star": 4,
         "bookTitleId": "BT002",
-        "userId": "U002"
+        "userId": "U002",
+        "userName": "Tran"
     }
 ]
 ```
@@ -565,7 +567,8 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
     "comment": "Cuốn sách tuyệt vời cho lập trình viên Java!",
     "star": 5,
     "bookTitleId": "BT001",
-    "userId": "U001"
+    "userId": "U001",
+    "userName": "Nguyen"
 }
 ```
 
@@ -574,7 +577,7 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
 **POST** `/api/review`
 
 -   **Roles:** ADMIN, LIBRARIAN, USER
--   **Description:** Create a new review for a book
+-   **Description:** Create a new review for a book. Users can only leave one review per book.
 -   **Request Example:**
 
 ```json
@@ -594,9 +597,15 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
     "comment": "Cuốn sách rất hữu ích cho developer Java.",
     "star": 4,
     "bookTitleId": "BT001",
-    "userId": "U001"
+    "userId": "U001",
+    "userName": "Nguyen"
 }
 ```
+
+**Error Responses:**
+- `400`: Validation errors (missing required fields, invalid star rating)
+- `500`: "You have already reviewed this book. You can only leave one review per book."
+- `500`: "Book title with this ID does not exist"
 
 ### Update Review
 
@@ -622,7 +631,8 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
     "comment": "Thay đổi ý kiến - cuốn sách xuất sắc!",
     "star": 5,
     "bookTitleId": "BT001",
-    "userId": "U001"
+    "userId": "U001",
+    "userName": "Nguyen"
 }
 ```
 
@@ -637,6 +647,37 @@ This ensures that BookTitle counters match actual BookCopy records and resolves 
 ```json
 "Review deleted successfully"
 ```
+
+### Get My Review for Book
+
+**GET** `/api/review/my-review/{bookTitleId}`
+
+-   **Roles:** ADMIN, LIBRARIAN, USER
+-   **Description:** Get the current user's review for a specific book
+-   **Path Parameters:**
+    -   `bookTitleId`: ID of the book title
+-   **Response Examples:**
+
+**If user has reviewed the book:**
+```json
+{
+    "id": "R001",
+    "date": "2025-05-30",
+    "comment": "Cuốn sách tuyệt vời cho lập trình viên Java!",
+    "star": 5,
+    "bookTitleId": "BT001",
+    "userId": "U001",
+    "userName": "Nguyen"
+}
+```
+
+**If user has not reviewed the book:**
+```json
+null
+```
+
+**Error Responses:**
+- `500`: "Error fetching user review: {error message}"
 
 ---
 
