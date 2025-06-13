@@ -14,6 +14,7 @@ import com.todo.backend.scheduler.jobs.ReservationExpiryJob;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.quartz.*;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -155,9 +156,21 @@ public class ReservationService {
         return reservationMapper.toResponseDto(existingReservation);
     }
 
-    public void deleteReservation(String id) {
+    public void deleteReservation(String id, String currentUserId) {
         Reservation existingReservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
+
+        // just owner or ADMIN/LIBRARY can delete
+        boolean isOwner = existingReservation.getUserId().equals(currentUserId);
+        User user = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        boolean isAdminOrLibrarian =
+                user.getRole() == UserRole.ADMIN ||
+                        user.getRole() == UserRole.LIBRARIAN;
+
+        if (!isOwner && !isAdminOrLibrarian) {
+            throw new AccessDeniedException("Not allowed to delete others' reservations");
+        }
 
         // Check if reservation is expired (expired reservations are auto-cleaned, but if user tries to delete, allow it)
         LocalDate today = LocalDate.now();

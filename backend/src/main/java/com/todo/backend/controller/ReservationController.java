@@ -6,6 +6,7 @@ import com.todo.backend.dto.reservation.UpdateReservationDto;
 import com.todo.backend.service.ReservationService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.BindingResult;
@@ -47,6 +48,17 @@ public class ReservationController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN', 'USER')")
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<?> getReservationsByUserId(@PathVariable String userId) {
+        try {
+            List<ResponseReservationDto> reservations = reservationService.getReservationsByUserId(userId);
+            return ResponseEntity.ok(reservations);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching reservations for user: " + e.getMessage());
+        }
+    }
+
     @PreAuthorize("hasAnyAuthority('USER')")
     @PostMapping
     public ResponseEntity<?> createReservation(@Valid @RequestBody CreateReservationDto createReservationDto, BindingResult result, Authentication authentication) {
@@ -78,16 +90,24 @@ public class ReservationController {
             return ResponseEntity.status(500).body("Error updating reservation: " + e.getMessage());        }
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'LIBRARIAN', 'USER')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteReservation(@PathVariable String id) {
+    public ResponseEntity<?> deleteReservation(
+            @PathVariable String id,
+            Authentication authentication) {
+
+        String currentUserId = authentication.getName();
+
         try {
-            reservationService.deleteReservation(id);
+            reservationService.deleteReservation(id, currentUserId);
             return ResponseEntity.ok("Reservation deleted successfully");
+        } catch (AccessDeniedException ade) {
+            return ResponseEntity.status(403).body("You do not have permission to delete this reservation");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error deleting reservation: " + e.getMessage());
         }
     }
+
 
     @PreAuthorize("hasAnyAuthority('USER')")
     @GetMapping("/my")
